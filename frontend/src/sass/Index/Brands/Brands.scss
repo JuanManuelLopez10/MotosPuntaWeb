@@ -1,0 +1,261 @@
+#Brands{
+    width: 100vw;
+    height: 80vh;
+    display: flex;
+    overflow:hidden;
+    }
+@media screen and (orientation:landscape){
+    .BrOption{
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        align-items:center;
+        a{
+
+                padding:2%;
+                border-radius: 10vw;
+                background-color:$redLetters;
+                color:white;
+                box-shadow: 0 0 20px black;
+            }
+        }
+        @keyframes imgTransitionFront{
+            0%{
+            width:110%
+            }
+        100%{
+                width:60%
+            }
+            }
+    @keyframes setSelection{
+        0%{
+            width:12vw;
+            }
+        100%{
+            width:30vw;
+            }
+        }
+        .BrandsOption{
+        animation: setSelection 0.5s ease-in-out;
+        width:30vw;
+        height:100%;
+        overflow:hidden;
+            .BrandLogo{
+                animation: imgTransitionFront 0.5s ease-in-out;
+                width:60%;
+            }
+                .BrandProductImage{
+            @keyframes appearProductImage{
+                0%{
+                    opacity:0;
+                    display:inline;
+                    width:100%;
+                }
+            100%{
+                    opacity:1;
+                    display:inline;
+                    width:100%;
+                }
+                }
+            animation: appearProductImage 0.5s ease-in-out;
+                   width:100%;
+                   margin-top:-100%;
+
+
+
+        }
+            button{
+            @keyframes appearButton{
+                0%{
+                    opacity:0;
+                    visibility:visible;
+                }
+                100%{
+                    opacity:1;
+                    visibility:visible;
+
+                    }
+            }
+            animation: appearButton 0.5s ease-in-out;
+        }
+        }
+
+
+
+
+    .BrandsOptionNot{
+            @keyframes setNotSelection{
+        0%{
+            width:30vw;
+            }
+        100%{
+            width:12vw;
+            }
+        }
+        @keyframes imgTransitionBack{
+            0%{
+                width:60%
+            }
+        100%{
+            width:110%
+            }
+            }
+        animation: setNotSelection 0.5s ease-in-out;
+        width:12vw;
+        height:100%;
+        overflow:hidden;
+        .BrandLogo{
+            animation: imgTransitionBack 0.5s ease-in-out;
+            width:110%;
+        }
+        .BrandProductImage{
+            @keyframes disapearProductImage{
+                0%{
+                    opacity:1;
+                    display:inline;
+                    width:100%;
+                }
+            100%{
+                    opacity:0;
+                    display:inline;
+                    width:100%;
+                }
+                }
+            animation: disapearProductImage 0.5s ease-in-out;
+                   margin-top:-100%;
+            display:none;
+        }
+        a{
+            @keyframes disapearButton{
+                0%{
+                    opacity:1;
+                    visibility:visible;
+                }
+                100%{
+                    opacity:0;
+                    visibility:visible;
+                    }
+            }
+            animation: disapearButton 0.5s ease-in-out;
+            visibility:hidden;
+        }
+    }
+}
+
+
+@media screen and (orientation:portrait){
+    #Brands{
+        flex-direction:column;
+        .BrOption{
+            width:100%;
+            display:flex;
+            align-items:center;
+            .BrandLogo{
+                height:100%;
+            }
+            a{
+                height:30%;
+                padding:2%;
+                display:flex;
+                align-items:center;
+                border-radius: 10vw;
+                background-color:$redLetters;
+                color:white;
+                box-shadow: 0 0 20px black;
+
+            }
+
+        }
+        .BrandsOption{
+            @keyframes MbSetBrand{
+                0%{
+                    height:12%
+                }
+                100%{
+                    height:30%
+                }
+            }
+            animation: MbSetBrand 0.5s ease-in-out;
+            height:30%;
+            .BrandProductImage{
+                @keyframes MBApearProductImage{
+                    0%{
+                        opacity:0;
+                        margin-left:-50vw;
+                    }
+                    100%{
+                        opacity:1;
+                        margin-left:0vw;
+                    }
+                }
+                animation: MBApearProductImage 0.5s ease-in-out;
+                height:100%;
+            }
+                    a{
+            @keyframes appearButton{
+                0%{
+                    opacity:0;
+                    visibility:visible;
+                }
+                100%{
+                    opacity:1;
+                    visibility:visible;
+
+                    }
+            }
+            margin-left:-80%;
+            animation: appearButton 0.5s ease-in-out;
+        }
+
+        }
+
+
+        .BrandsOptionNot{
+            @keyframes MbSetBrandOut{
+                0%{
+                    height:30%
+                }
+                100%{
+                    height:12%
+                }
+            }
+            animation: MbSetBrandOut 0.5s ease-in-out;
+            height:12%;
+            .BrandProductImage{
+                @keyframes MBDisApearProductImage{
+                    0%{
+                        opacity:1;
+                        display:inline;
+                        margin-left:0vw;
+                    }
+                    100%{
+                        display:inline;
+                        opacity:0;
+                        margin-left:-50vw;
+                    }
+                }
+                animation: MBDisApearProductImage 0.5s ease-in-out;
+                height:100%;
+                display:none
+            }
+                a{
+            @keyframes disapearButton{
+                0%{
+                    opacity:1;
+                    visibility:visible;
+                }
+                100%{
+                    opacity:0;
+                    visibility:visible;
+                    }
+            }
+            animation: disapearButton 0.5s ease-in-out;
+            visibility:hidden;
+            margin-left:-80%;
+
+        }
+
+        }
+    }
+}
+

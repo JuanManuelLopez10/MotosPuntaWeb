@@ -1,0 +1,40 @@
+@import "../constants.scss";
+
+#MenuButton{
+    @keyframes ColoredBlack{
+        0%{color: red;}
+        100%{color: black;}
+    }
+    @keyframes ColoredRed{
+        0%{color: black;}
+        100%{color: red;}
+    }
+    animation: ColoredBlack 0.3s ease-in-out;
+    color:black;
+    background:none;
+    border:none;
+    display:flex;
+    align-items:center;
+    height:100%;
+    font-family:$mainFont;
+    font-weight:400;
+    font-size:2vh;
+    &:hover{
+        animation: ColoredRed 0.3s ease-in-out;
+        color:red;
+        cursor:pointer;
+    }
+}
+@media screen and (orientation:portrait){
+    #MenuButton{
+        span{
+            display:none;
+        }
+    }
+}
+
+#MenuSVG{
+    font-size:3vh;
+    font-weight:100;
+}
+

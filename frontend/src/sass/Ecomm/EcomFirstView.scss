@@ -1,0 +1,57 @@
+    #EcommFirstView{
+        display:flex;
+        width:100vw;
+        background-image: radial-gradient(circle at center, #7c1614, #513a39);
+        img{
+            position:absolute;
+        }
+        h2{
+            position:absolute;
+            top:0%;
+            margin-bottom:0%;
+            padding-bottom:0%;
+            width:100%;
+            text-align:center;
+            font-size:10vw;
+            font-family:$mainFont;
+            font-weight:400;
+            font-style:italic;
+            color:white;
+        }
+    }
+@media screen and (orientation:landscape){
+        #EcommFirstView{
+            height:40vh;
+            position:absolute;
+            top:0;
+            left:0;
+            img{
+            height:40vh;
+                                @keyframes LoopOfImgRotating{
+            0%{
+                margin-left:10vw;
+                transform:rotate(0deg);
+            }
+            50%{
+                margin-left:50vw;
+                transform:rotate(180deg);
+            }
+            100%{
+                margin-left:10vw;
+                transform:rotate(0deg);
+            }
+        }
+        animation:LoopOfImgRotating 60s infinite;
+        }
+        }
+}
+@media screen and (orientation:portrait){
+    #EcommFirstView{
+        height:20vh;
+        position:absolute;
+        img{
+                        height:20vh;
+        }
+    }
+
+}

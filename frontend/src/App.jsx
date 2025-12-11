@@ -1,30 +1,41 @@
 import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import Navbar from './Navbar/Navbar'
+import Index from './Index/Index'
+import Ecomm from './Ecomm/Ecomm'
+import Footer from './Footer/Footer'
 import './App.css'
+import { BrowserRouter, Routes, Route } from "react-router-dom" // ✅ ahora sí
+import { db } from "./Firebase"
+import { fetchProducts } from "./functions"
+import ProductScreen from "./Product/ProductScreen"
+import PolicityOfPrivacity from "./Politicy/PolicityOfPrivacity"
 
 function App() {
   const [Products, setProducts] = useState(undefined)
 
-  const fetchProducts = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:5000/api/products')
-        const data = await response.json()
-        setProducts(data)
-        console.log(data)
-        } catch (error) {
-            console.error('Error fetching products:', error)
-        }
-    }
-    useEffect(() => {
-        if (!Products){
-            fetchProducts()
-        }
-    }, [])
+  useEffect(() => {
+    if (!Products){
+        console.log("chau")
+         fetchProducts(setProducts)
+        }else{
+      console.log("hola")
+            }
+  }, [])
 
+  if (!Products) return <div>Cargando...</div>
+    console.log(Products)
   return (
     <>
-        <h1>MotosPunta Web</h1>
+      <Navbar data={Products} />
+
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/ecomm/:FilterType/:Value" element={<Ecomm />} />
+        <Route path="/product/:id" element={<ProductScreen />} />
+        <Route path="/policity" element={<PolicityOfPrivacity />} />
+      </Routes>
+
+      <Footer />
     </>
   )
 }

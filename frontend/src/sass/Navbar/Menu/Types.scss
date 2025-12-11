@@ -1,0 +1,50 @@
+#TypesMenu{
+    @keyframes OpacityIncrease{
+        0%{opacity:0;}
+        100%{opacity:1;}
+    }
+    animation: OpacityIncrease 0.3s ease-in-out forwards;
+    display: flex;
+    flex-direction: column;
+    padding-top:10vh;
+    background-color:rgb(100,100,100);
+    height: 100%;
+    justify-content: space-around;
+    a{
+        @keyframes ColoredWhite{
+                0%{color: red;}
+                50%{color: black;}
+                100%{color: white;}
+            }
+            cursor:pointer;
+        animation: ColoredWhite 0.3s ease-in-out forwards;
+        background:none;
+        border:none;
+        margin-left:2vh;
+        font-size:2vh;
+        &:hover{
+            @keyframes ColoredRed{
+                0%{color: white;}
+                50%{color: black;}
+                100%{color: red;}
+            }
+            cursor:pointer;
+            animation: ColoredRed 0.3s ease-in-out forwards;
+            }
+        }
+
+}
+@media screen and (orientation:landscape){
+    #TypesMenu{
+    width: 30%;
+    }
+}
+@media screen and (orientation:portrait){
+    #TypesMenu{
+        @keyframes AppearTypes{
+            0%{width:0vw;}
+            100%{width:50vw;}
+        }
+        animation: AppearTypes 0.5s ease-in-out forwards;
+    }
+}

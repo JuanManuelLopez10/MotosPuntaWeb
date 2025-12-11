@@ -1,42 +1,1281 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+@charset "UTF-8";
+@media screen and (orientation: landscape) {
+  #NavbarLogo img {
+    height: 10vh;
+  }
+}
+@media screen and (orientation: portrait) {
+  #NavbarLogo img {
+    height: 10vh;
+  }
+}
+#searchButton {
+  font-size: 2.5vh;
+}
+@keyframes ColoredBlack {
+  0% {
+    color: red;
+  }
+  100% {
+    color: black;
+  }
+}
+#searchButton {
+  animation: ColoredBlack 0.3s ease-in-out;
+  color: black;
+}
+@keyframes ColoredRed {
+  0% {
+    color: black;
+  }
+  100% {
+    color: red;
+  }
+}
+#searchButton:hover {
+  animation: ColoredRed 0.3s ease-in-out;
+  color: red;
+  cursor: pointer;
+}
+
+@media screen and (orientation: portrait) {
+  #searchButton {
+    display: none;
+  }
+}
+@keyframes ColoredBlack {
+  0% {
+    color: red;
+  }
+  100% {
+    color: black;
+  }
+}
+@keyframes ColoredRed {
+  0% {
+    color: black;
+  }
+  100% {
+    color: red;
+  }
+}
+#MenuButton {
+  animation: ColoredBlack 0.3s ease-in-out;
+  color: black;
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  font-family: "Oswald", sans-serif;
+  font-weight: 400;
+  font-size: 2vh;
+}
+#MenuButton:hover {
+  animation: ColoredRed 0.3s ease-in-out;
+  color: red;
+  cursor: pointer;
+}
+
+@media screen and (orientation: portrait) {
+  #MenuButton span {
+    display: none;
+  }
+}
+#MenuSVG {
+  font-size: 3vh;
+  font-weight: 100;
+}
+
+#ClassesMenu {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background-color: rgb(60, 60, 60);
+  height: 100%;
+  padding-top: 10vh;
+  justify-content: space-around;
+  box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.5);
+}
+@keyframes ColoredWhite {
+  0% {
+    color: red;
+  }
+  50% {
+    color: black;
+  }
+  100% {
+    color: white;
+  }
+}
+#ClassesMenu button {
+  cursor: pointer;
+  animation: ColoredWhite 0.3s ease-in-out forwards;
+  background: none;
+  border: none;
+  font-family: "Oswald", sans-serif;
+  font-size: 2vh;
+}
+@keyframes ColoredRed {
+  0% {
+    color: white;
+  }
+  50% {
+    color: black;
+  }
+  100% {
+    color: red;
+  }
+}
+#ClassesMenu button:hover {
+  cursor: pointer;
+  animation: ColoredRed 0.3s ease-in-out forwards;
+}
+
+@media screen and (orientation: landscape) {
+  .ClassesMenuFull {
+    width: 30%;
+  }
+  .ClassesMenuReduced {
+    width: 30%;
+  }
+  @keyframes OpacityIncrease {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  #ClassesMenu {
+    animation: OpacityIncrease 0.3s ease-in-out forwards;
+  }
+}
+@media screen and (orientation: portrait) {
+  @keyframes OpacityIncrease {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  .ClassesMenuFull {
+    animation: OpacityIncrease 0.3s ease-in-out forwards;
+    width: 100%;
+  }
+  @keyframes ReduceClassMenu {
+    0% {
+      width: 100vw;
+    }
+    100% {
+      width: 50vw;
+    }
+  }
+  .ClassesMenuReduced {
+    animation: ReduceClassMenu 0.5s ease-in-out forwards;
+  }
+}
+@keyframes OpacityIncrease {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+#TypesMenu {
+  animation: OpacityIncrease 0.3s ease-in-out forwards;
+  display: flex;
+  flex-direction: column;
+  padding-top: 10vh;
+  background-color: rgb(100, 100, 100);
+  height: 100%;
+  justify-content: space-around;
+}
+@keyframes ColoredWhite {
+  0% {
+    color: red;
+  }
+  50% {
+    color: black;
+  }
+  100% {
+    color: white;
+  }
+}
+#TypesMenu a {
+  cursor: pointer;
+  animation: ColoredWhite 0.3s ease-in-out forwards;
+  background: none;
+  border: none;
+  margin-left: 2vh;
+  font-size: 2vh;
+}
+@keyframes ColoredRed {
+  0% {
+    color: white;
+  }
+  50% {
+    color: black;
+  }
+  100% {
+    color: red;
+  }
+}
+#TypesMenu a:hover {
+  cursor: pointer;
+  animation: ColoredRed 0.3s ease-in-out forwards;
+}
+
+@media screen and (orientation: landscape) {
+  #TypesMenu {
+    width: 30%;
+  }
+}
+@media screen and (orientation: portrait) {
+  @keyframes AppearTypes {
+    0% {
+      width: 0vw;
+    }
+    100% {
+      width: 50vw;
+    }
+  }
+  #TypesMenu {
+    animation: AppearTypes 0.5s ease-in-out forwards;
+  }
+}
+#NavbarMenu {
+  width: 100%;
+  z-index: 99;
+  height: 100vh;
+  position: fixed;
+  display: flex;
+  top: 0;
+  backdrop-filter: blur(5px);
+}
+
+#TypePreview {
+  display: flex;
+  align-items: center;
+  height: 100vh;
+  width: 40vw;
+  background-image: radial-gradient(circle, rgb(255, 255, 255) 0%, rgb(200, 200, 200) 100%);
+}
+@keyframes AppearImage {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+#TypePreview img {
+  animation: AppearImage 0.3s ease-in-out forwards;
+  height: 60vh;
+}
+
+@media screen and (orientation: portrait) {
+  #TypePreview {
+    display: none;
+  }
+}
+nav {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+  height: 10vh;
+  background-image: linear-gradient(rgba(100, 100, 100, 0.7), rgba(100, 100, 100, 0));
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+#Brands {
+  width: 100vw;
+  height: 80vh;
+  display: flex;
+  overflow: hidden;
+}
+
+@media screen and (orientation: landscape) {
+  .BrOption {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .BrOption a {
+    padding: 2%;
+    border-radius: 10vw;
+    background-color: #5b1010;
+    color: white;
+    box-shadow: 0 0 20px black;
+  }
+  @keyframes imgTransitionFront {
+    0% {
+      width: 110%;
+    }
+    100% {
+      width: 60%;
+    }
+  }
+  @keyframes setSelection {
+    0% {
+      width: 12vw;
+    }
+    100% {
+      width: 30vw;
+    }
+  }
+  .BrandsOption {
+    animation: setSelection 0.5s ease-in-out;
+    width: 30vw;
+    height: 100%;
+    overflow: hidden;
+  }
+  .BrandsOption .BrandLogo {
+    animation: imgTransitionFront 0.5s ease-in-out;
+    width: 60%;
+  }
+  @keyframes appearProductImage {
+    0% {
+      opacity: 0;
+      display: inline;
+      width: 100%;
+    }
+    100% {
+      opacity: 1;
+      display: inline;
+      width: 100%;
+    }
+  }
+  .BrandsOption .BrandProductImage {
+    animation: appearProductImage 0.5s ease-in-out;
+    width: 100%;
+    margin-top: -100%;
+  }
+  @keyframes appearButton {
+    0% {
+      opacity: 0;
+      visibility: visible;
+    }
+    100% {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+  .BrandsOption button {
+    animation: appearButton 0.5s ease-in-out;
+  }
+  @keyframes setNotSelection {
+    0% {
+      width: 30vw;
+    }
+    100% {
+      width: 12vw;
+    }
+  }
+  @keyframes imgTransitionBack {
+    0% {
+      width: 60%;
+    }
+    100% {
+      width: 110%;
+    }
+  }
+  .BrandsOptionNot {
+    animation: setNotSelection 0.5s ease-in-out;
+    width: 12vw;
+    height: 100%;
+    overflow: hidden;
+  }
+  .BrandsOptionNot .BrandLogo {
+    animation: imgTransitionBack 0.5s ease-in-out;
+    width: 110%;
+  }
+  @keyframes disapearProductImage {
+    0% {
+      opacity: 1;
+      display: inline;
+      width: 100%;
+    }
+    100% {
+      opacity: 0;
+      display: inline;
+      width: 100%;
+    }
+  }
+  .BrandsOptionNot .BrandProductImage {
+    animation: disapearProductImage 0.5s ease-in-out;
+    margin-top: -100%;
+    display: none;
+  }
+  @keyframes disapearButton {
+    0% {
+      opacity: 1;
+      visibility: visible;
+    }
+    100% {
+      opacity: 0;
+      visibility: visible;
+    }
+  }
+  .BrandsOptionNot a {
+    animation: disapearButton 0.5s ease-in-out;
+    visibility: hidden;
+  }
+}
+@media screen and (orientation: portrait) {
+  #Brands {
+    flex-direction: column;
+  }
+  #Brands .BrOption {
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+  #Brands .BrOption .BrandLogo {
+    height: 100%;
+  }
+  #Brands .BrOption a {
+    height: 30%;
+    padding: 2%;
+    display: flex;
+    align-items: center;
+    border-radius: 10vw;
+    background-color: #5b1010;
+    color: white;
+    box-shadow: 0 0 20px black;
+  }
+  @keyframes MbSetBrand {
+    0% {
+      height: 12%;
+    }
+    100% {
+      height: 30%;
+    }
+  }
+  #Brands .BrandsOption {
+    animation: MbSetBrand 0.5s ease-in-out;
+    height: 30%;
+  }
+  @keyframes MBApearProductImage {
+    0% {
+      opacity: 0;
+      margin-left: -50vw;
+    }
+    100% {
+      opacity: 1;
+      margin-left: 0vw;
+    }
+  }
+  #Brands .BrandsOption .BrandProductImage {
+    animation: MBApearProductImage 0.5s ease-in-out;
+    height: 100%;
+  }
+  @keyframes appearButton {
+    0% {
+      opacity: 0;
+      visibility: visible;
+    }
+    100% {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+  #Brands .BrandsOption a {
+    margin-left: -80%;
+    animation: appearButton 0.5s ease-in-out;
+  }
+  @keyframes MbSetBrandOut {
+    0% {
+      height: 30%;
+    }
+    100% {
+      height: 12%;
+    }
+  }
+  #Brands .BrandsOptionNot {
+    animation: MbSetBrandOut 0.5s ease-in-out;
+    height: 12%;
+  }
+  @keyframes MBDisApearProductImage {
+    0% {
+      opacity: 1;
+      display: inline;
+      margin-left: 0vw;
+    }
+    100% {
+      display: inline;
+      opacity: 0;
+      margin-left: -50vw;
+    }
+  }
+  #Brands .BrandsOptionNot .BrandProductImage {
+    animation: MBDisApearProductImage 0.5s ease-in-out;
+    height: 100%;
+    display: none;
+  }
+  @keyframes disapearButton {
+    0% {
+      opacity: 1;
+      visibility: visible;
+    }
+    100% {
+      opacity: 0;
+      visibility: visible;
+    }
+  }
+  #Brands .BrandsOptionNot a {
+    animation: disapearButton 0.5s ease-in-out;
+    visibility: hidden;
+    margin-left: -80%;
+  }
+}
+@keyframes fadeIn {
+  0% {
+    background-color: rgba(230, 230, 230, 0);
+    backdrop-filter: blur(0px);
+    left: -100vw;
+  }
+  100% {
+    backdrop-filter: blur(5px);
+    background-color: rgba(230, 230, 230, 0.8);
+    left: 0vw;
+  }
+}
+#OtherOptions {
+  position: fixed;
+  z-index: 4;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  backdrop-filter: blur(5px);
+  background-color: rgba(230, 230, 230, 0.8);
+}
+#OtherOptionsHeader {
+  width: 100vw;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-inline: 5vw;
+  padding-top: 10vh;
+  box-sizing: border-box;
+  font-family: "Oswald", sans-serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 4vw;
+  color: black;
+  cursor: pointer;
+}
+#OtherOptionsHeader h3 {
+  width: 60%;
+}
+#OtherOptionsHeaderExit {
+  background: none;
+}
+#OtherOptionsBody {
+  display: flex;
+  flex-direction: column;
+  width: 80vw;
+  height: 70vh;
+  overflow-y: hidden;
+  align-items: center;
+}
+#OtherOptionsBodyCard {
+  width: 90%;
+  height: 20vh;
+  display: flex;
+}
+#OtherOptionsBodyCard img {
+  height: 80%;
+}
+
+@media screen and (orientation: landscape) {
+  @keyframes AppearOptions {
+    0% {
+      margin-left: -100vw;
+      opacity: 0;
+    }
+    100% {
+      margin-left: 0vw;
+      opacity: 1;
+    }
+  }
+  @keyframes ApearOtherOptions {
+    0% {
+      background-color: rgba(230, 230, 230, 0);
+    }
+    100% {
+      background-color: rgba(230, 230, 230, 0.8);
+    }
+  }
+  #OtherOptions {
+    animation: ApearOtherOptions 0.5s ease-in-out;
+  }
+  #OtherOptionsHeader {
+    animation: AppearOptions 1s ease-in-out;
+    font-size: 2vw;
+  }
+  #OtherOptionsHeader h3 {
+    width: 70%;
+  }
+  #OtherOptionsBody {
+    animation: AppearOptions 1s ease-in-out;
+    width: 100vw;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-center: space-around;
+    margin-top: -5vh;
+  }
+  #OtherOptionsBodyCard {
+    display: flex;
+    flex-direction: column;
+    height: 40vh;
+    width: 25vw;
+    margin-left: 15vw;
+    align-items: center;
+    border-radius: 5vh;
+    overflow: hidden;
+  }
+  #OtherOptionsBodyCard img {
+    width: 20vw;
+  }
+}
+@media screen and (orientation: portrait) {
+  #OtherOptions {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+}
+#FirstView {
+  height: 90vh;
+  width: 100vw;
+  padding-top: 10vh;
+  display: flex;
+  justify-content: space-between;
+  background-image: linear-gradient(#919191, #e6e6e6);
+}
+#FirstViewMore {
+  background-color: #5b1010;
+  font-family: "Oswald", sans-serif;
+  color: white;
+  border: none;
+}
+
+@media screen and (orientation: landscape) {
+  #FirstViewContent {
+    width: 90vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #FirstViewContent h2 {
+    width: 100%;
+    text-align: center;
+    font-size: 5vw;
+    margin-top: 0;
+    font-family: "Oswald", sans-serif;
+    font-weight: 400;
+    font-style: italic;
+    color: #5b1010;
+  }
+  #FirstViewContent img {
+    margin-top: -20vh;
+    width: 50vw;
+    z-index: 3;
+  }
+  #FirstViewContent button {
+    margin-top: -15vh;
+    z-index: 3;
+    font-size: 2vh;
+  }
+  #FirstViewRight {
+    z-index: 2;
+    width: 35vw;
+    position: absolute;
+    height: 80vh;
+    right: 0;
+    margin-top: -10vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-top: 20vh;
+    align-items: center;
+    background-image: linear-gradient(#5b1010, #251010);
+  }
+  #FirstViewRight img {
+    width: 10vw;
+  }
+  #FirstViewRight p {
+    width: 80%;
+    font-family: "Oswald", sans-serif;
+    color: white;
+    font-size: 1.5vw;
+    font-weight: 300;
+  }
+}
+@media screen and (orientation: portrait) {
+  #FirstViewContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100vw;
+  }
+  #FirstViewContent h2 {
+    font-size: 8vw;
+    color: black;
+    width: 90vw;
+    text-align: center;
+    font-family: "Oswald", sans-serif;
+    font-weight: 400;
+    font-style: italic;
+  }
+  #FirstViewContent img {
+    width: 150vw;
+    margin-right: 50vw;
+    margin-top: -15vh;
+  }
+  #FirstViewRight {
+    display: none;
+  }
+}
+#MainProducts {
+  width: 100vw;
+  background-color: #bdbdbd;
+  margin-top: 0vh;
+  padding-top: 0vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#MainProducts h2 {
+  margin-top: 0vh;
+  padding-top: 10vh;
+  font-size: 5vw;
+  font-family: "Oswald", sans-serif;
+  font-weight: 400;
+  font-style: italic;
+  color: #5b1010;
+}
+#MainProducts #MainProductsContainer {
+  display: flex;
+  flex-direction: row;
+  width: 100vw;
+}
+#MainProducts #MainProductsContainer .MainProductCard {
+  margin-bottom: 10vh;
+  box-shadow: 0 0 50px grey;
+  margin-top: 10vh;
+  border-radius: 5vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+@media screen and (orientation: portrait) {
+  #MainProducts #MainProductsContainerInner {
+    width: auto;
+    display: flex;
+  }
+  #MainProducts #MainProductsContainer {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: scroll;
+  }
+  #MainProducts #MainProductsContainer .MainProductCard {
+    width: 40vw;
+    margin-inline: 2.5vw;
+    box-shadow: 0 0 50px grey;
+    border-radius: 5vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #MainProducts #MainProductsContainer .MainProductCard h3 {
+    font-size: 3vw;
+  }
+  #MainProducts #MainProductsContainer .MainProductCard img {
+    width: 40vw;
+  }
+}
+@media screen and (orientation: landscape) {
+  #MainProducts #MainProductsContainer {
+    display: flex;
+    justify-content: center;
+  }
+  #MainProducts #MainProductsContainerInner {
+    display: flex;
+    width: 100vw;
+    justify-content: space-around;
+    overflow: hidden;
+  }
+  #MainProducts #MainProductsContainerInner .MainProductCard {
+    width: 20vw;
+    box-shadow: 0 0 50px grey;
+    border-radius: 5vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  #MainProducts #MainProductsContainerInner .MainProductCard h3 {
+    font-size: 1.5vw;
+  }
+  #MainProducts #MainProductsContainerInner .MainProductCard img {
+    width: 90%;
+  }
+  #MainProducts #MainProductsContainerInner .MainProductCard:not(:hover) {
+    transform: scale(1);
+    box-shadow: 0 0 50px grey;
+    cursor: default;
+    transition: all 0.3s ease-in-out;
+  }
+  #MainProducts #MainProductsContainerInner .MainProductCard:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 50px #5b1010;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+}
+
+@media screen and (orientation: landscape) {
+  #Footer {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-rows: 4fr 1fr;
+    grid-template-areas: "map linksOne linksTwo" "copywrite copywrite copywrite";
+  }
+  #FooterMap {
+    grid-area: map;
+    width: 80%;
+    height: 80%;
+  }
+  #FooterLinksOne {
+    grid-area: linksOne;
+    height: 80%;
+    width: 50%;
+  }
+  #FooterLinksTwo {
+    grid-area: linksTwo;
+    height: 80%;
+    width: 50%;
+  }
+}
+@media screen and (orientation: portrait) {
+  #Footer {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  #FooterMap {
+    width: 80vw;
+    height: 60vw;
+    margin-left: 10vw;
+    margin-top: 5vh;
+  }
+  #FooterCopywrite {
+    width: 100vw;
+    justify-self: center;
+    text-align: center;
+  }
+  #FooterLinksOne {
+    height: 20vh;
+    width: 50vw;
+  }
+  #FooterLinksOne h5 {
+    font-size: 1.5vh;
+  }
+  #FooterLinksOne a {
+    font-size: 1.2vh;
+  }
+  #FooterLinksTwo {
+    height: 20vh;
+  }
+  #FooterLinksTwo h5 {
+    font-size: 1.5vh;
+  }
+  #FooterLinksTwo a {
+    font-size: 1.2vh;
+  }
+}
+#Footer {
+  width: 100vw;
+  height: 70vh;
+  margin-top: 0vh;
+  padding-top: 0vh;
+  background-image: url("./assets/FooterBG.jpg");
+  background-size: cover;
+}
+#FooterMap {
+  justify-self: center;
+  align-self: center;
+}
+#FooterLinksOne {
+  display: flex;
+  flex-direction: column;
+  margin-left: 5vw;
+  align-self: center;
+  justify-content: space-around;
+  color: white;
+  justify-self: center;
+}
+#FooterLinksOne h5 {
+  margin-bottom: -2vh;
+}
+#FooterLinksOne a {
+  text-decoration: none;
+  color: white;
+}
+#FooterLinksTwo {
+  display: flex;
+  flex-direction: column;
+  margin-left: 5vw;
+  align-self: center;
+  justify-content: space-around;
+  color: white;
+  justify-self: center;
+}
+#FooterLinksTwo h5 {
+  margin-bottom: -2vh;
+}
+#FooterLinksTwo a {
+  text-decoration: none;
+  color: white;
+}
+#FooterCopywrite {
+  grid-area: copywrite;
+  justify-self: center;
+  align-self: center;
+  color: white;
+}
+
+#EcommFirstView {
+  display: flex;
+  width: 100vw;
+  background-image: radial-gradient(circle at center, #7c1614, #513a39);
+}
+#EcommFirstView img {
+  position: absolute;
+}
+#EcommFirstView h2 {
+  position: absolute;
+  top: 0%;
+  margin-bottom: 0%;
+  padding-bottom: 0%;
+  width: 100%;
   text-align: center;
+  font-size: 10vw;
+  font-family: "Oswald", sans-serif;
+  font-weight: 400;
+  font-style: italic;
+  color: white;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+@media screen and (orientation: landscape) {
+  #EcommFirstView {
+    height: 40vh;
+    position: absolute;
+    top: 0;
+    left: 0;
   }
-  to {
-    transform: rotate(360deg);
+  #EcommFirstView img {
+    height: 40vh;
+  }
+  @keyframes LoopOfImgRotating {
+    0% {
+      margin-left: 10vw;
+      transform: rotate(0deg);
+    }
+    50% {
+      margin-left: 50vw;
+      transform: rotate(180deg);
+    }
+    100% {
+      margin-left: 10vw;
+      transform: rotate(0deg);
+    }
+  }
+  #EcommFirstView img {
+    animation: LoopOfImgRotating 60s infinite;
   }
 }
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+@media screen and (orientation: portrait) {
+  #EcommFirstView {
+    height: 20vh;
+    position: absolute;
+  }
+  #EcommFirstView img {
+    height: 20vh;
   }
 }
-
-.card {
-  padding: 2em;
+#EcommFilters {
+  width: 100vw;
+  display: flex;
+  justify-content: space-around;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+#EcommFilters #EcommFiltersSearch {
+  position: absolute;
+  width: 60%;
+  height: 5vh;
+  z-index: 6;
 }
 
-.read-the-docs {
-  color: #888;
+#EcommFiltersModal {
+  position: fixed;
+  z-index: 6;
+  top: 0;
+  left: 0;
+  padding-top: 10vh;
+  background-color: rgba(230, 230, 230, 0.9);
+  backdrop-filter: blur(5px);
+  width: 100vw;
+  height: 100vh;
 }
+#EcommFiltersModalHeader {
+  display: flex;
+  width: 100%;
+  height: 5vh;
+  justify-content: space-around;
+  align-items: center;
+}
+#EcommFiltersModalBody {
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+  overflow-y: hidden;
+  align-items: flex-start;
+}
+#EcommFiltersModalBody .FilterRow {
+  align-items: center;
+  display: flex;
+  justify-content: flex-start;
+  overflow-x: scroll;
+  overflow-y: hidden;
+}
+#EcommFiltersModalBody .FilterRow button {
+  margin-right: 2vw;
+}
+#EcommFiltersModalBody .FilterRow .active {
+  background-color: #ff0e18;
+  color: white;
+}
+#EcommFiltersModalBody .BottomButton {
+  margin-inline: 2vw;
+  margin-top: 2vh;
+}
+
+@media screen and (orientation: portrait) {
+  #EcommFilters {
+    position: absolute;
+    top: 20vh;
+    width: 100vw;
+  }
+  #EcommFilters .FilterRow {
+    width: 100vw;
+  }
+  #EcommFilters #EcommFiltersSearch {
+    width: 80vw;
+  }
+}
+@media screen and (orientation: landscape) {
+  #EcommFilters {
+    left: 20vw;
+    width: 60vw;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  #EcommFilters #EcommFiltersModal {
+    box-shadow: 0 0 50px black;
+    padding-top: 1vh;
+    height: 90vh;
+    position: fixed;
+    top: 5vh;
+    left: 20vw;
+    width: 60vw;
+  }
+  #EcommFilters #EcommFiltersModal h3 {
+    font-size: 1.5vw;
+  }
+  #EcommFilters button {
+    margin-bottom: 2vh;
+    margin-top: 5vh;
+    width: 20%;
+  }
+  #EcommFilters .FilterRow {
+    width: 100%;
+    height: 10vh;
+    padding-left: 1vw;
+    flex-wrap: no-wrap;
+    align-items: center;
+    overflow-x: scroll;
+  }
+  #EcommFilters .FilterRow::-webkit-scrollbar {
+    height: 6px; /* solo la barra */
+  }
+  #EcommFilters .FilterRow::-webkit-scrollbar-track {
+    background: transparent; /* sin fondo */
+  }
+  #EcommFilters .FilterRow::-webkit-scrollbar-thumb {
+    background: #999; /* color de la barra */
+    border-radius: 3px; /* redondeada */
+  }
+  #EcommFilters .FilterRow::-webkit-scrollbar-thumb:hover {
+    background: #666; /* más oscuro al pasar el mouse */
+  }
+  #EcommFilters .FilterRow::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  #EcommFilters .FilterRow::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  #EcommFilters .FilterRow button {
+    margin-top: -0.5vh;
+  }
+  #EcommFilters #EcommFiltersSearch {
+    top: 5vh;
+    left: 2vw;
+    width: 16vw;
+  }
+  #EcommFilters {
+    top: 40vh;
+  }
+  #EcommFiltersModalBody {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    overflow-y: visible;
+  }
+  #EcommFiltersModalBody button {
+    width: 10vw;
+  }
+  #EcommFiltersModalBody .FilterInputDiv {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 50%;
+  }
+  #EcommFiltersModalBody {
+    justify-content: space-around;
+  }
+}
+#EcommProducts {
+  width: 100vw;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: center;
+}
+#EcommProducts .EcommProductCard {
+  text-decoration: none;
+  color: black;
+}
+
+@media screen and (orientation: portrait) {
+  #EcommProducts {
+    left: 0;
+    width: 100vw;
+    padding-top: 30vh;
+    padding-bottom: 5vh;
+  }
+  #EcommProducts .EcommProductCard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    grid-template-areas: "image title" "image description";
+    width: 80vw;
+    height: 30vw;
+    margin-bottom: 5vh;
+  }
+  #EcommProducts .EcommProductCard img {
+    width: 100%;
+    grid-area: image;
+  }
+  #EcommProducts .EcommProductCardTitle {
+    grid-area: title;
+    display: flex;
+    flex-direction: column;
+  }
+  #EcommProducts .EcommProductCardTitle h3 {
+    margin-bottom: -5%;
+  }
+  #EcommProducts .EcommProductCardTitle p {
+    font-size: 2vw;
+    color: grey;
+  }
+  #EcommProducts .EcommProductCardPrice {
+    grid-area: description;
+    font-size: 4vw;
+    font-weight: 700;
+  }
+  #EcommProducts .EcommProductCard {
+    margin-left: 2vw;
+  }
+}
+@media screen and (orientation: landscape) {
+  #EcommProducts {
+    padding-bottom: 80vh;
+    width: 100vw;
+    position: relative;
+    top: 50vh;
+  }
+  #EcommProducts .EcommProductCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 2vh;
+    width: 25vw;
+    height: 50vh;
+    margin-left: 2vw;
+  }
+  #EcommProducts .EcommProductCard p {
+    margin-top: -1vh;
+    width: 100%;
+    text-align: center;
+  }
+  #EcommProducts .EcommProductCard span {
+    font-size: 0.6rem;
+    font-weight: 500;
+  }
+  #EcommProducts .EcommProductCard img {
+    width: 80%;
+  }
+}
+#Ecomm {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  top: 0;
+  left: 0;
+  background-color: rgb(230, 230, 230);
+  backdrop-filter: blur(5px);
+  z-index: 5;
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}
+
+/*# sourceMappingURL=App.css.map */

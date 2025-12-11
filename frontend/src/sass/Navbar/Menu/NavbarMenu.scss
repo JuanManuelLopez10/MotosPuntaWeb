@@ -1,0 +1,39 @@
+@import "./ClassMenu.scss";
+@import "./Types.scss";
+
+
+#NavbarMenu{
+    width: 100%;
+    z-index: 99;
+    height: 100vh;
+    position: fixed;
+    display:flex;
+    top: 0;
+    backdrop-filter: blur(5px);
+
+    }
+
+
+
+#TypePreview{
+    display:flex;
+    align-items:center;
+    height:100vh;
+    width:40vw;
+    background-image: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(200,200,200,1) 100%);
+    img{
+        @keyframes AppearImage{
+            0%{opacity:0;}
+            100%{opacity:1;}
+        }
+        animation: AppearImage 0.3s ease-in-out forwards;
+        height:60vh;
+        }
+    }
+
+@media screen and (orientation:portrait){
+
+    #TypePreview{
+        display:none;
+        }
+}

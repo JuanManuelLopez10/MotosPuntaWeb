@@ -1,0 +1,111 @@
+@media screen and (orientation:landscape){
+    #Footer{
+        display:grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        grid-template-rows: 4fr 1fr;
+        grid-template-areas: "map linksOne linksTwo" "copywrite copywrite copywrite";
+        &Map{
+            grid-area:map;
+            width:80%;
+            height:80%;
+        }
+        &LinksOne{
+            grid-area:linksOne;
+            height:80%;
+            width:50%;
+        }
+        &LinksTwo{
+            grid-area:linksTwo;
+            height:80%;
+            width:50%;
+            }
+    }
+}
+@media screen and (orientation:portrait){
+    #Footer{
+        display:flex;
+        flex-wrap:wrap;
+        &Map{
+            width:80vw;
+            height:60vw;
+            margin-left:10vw;
+            margin-top:5vh;
+        }
+        &Copywrite{
+            width:100vw;
+            justify-self:center;
+            text-align:center;
+        }
+    }
+
+        #FooterLinksOne{
+            height:20vh;
+            width:50vw;
+            h5{
+                font-size:1.5vh;
+            }
+            a{
+                font-size:1.2vh;
+            }
+        }
+            #FooterLinksTwo{
+            height:20vh;
+            h5{
+                font-size:1.5vh;
+            }
+            a{
+                font-size:1.2vh;
+            }
+        }
+
+}
+#Footer{
+    width:100vw;
+    height:70vh;
+    margin-top:0vh;
+    padding-top:0vh;
+    background-image:url("./assets/FooterBG.jpg");
+    background-size:cover;
+    &Map{
+        justify-self:center;
+        align-self:center;
+    }
+    &LinksOne{
+        display:flex;
+        flex-direction:column;
+        margin-left:5vw;
+        align-self:center;
+        justify-content:space-around;
+        color:white;
+        justify-self:center;
+        h5{
+            margin-bottom:-2vh;
+        }
+    a{
+        text-decoration:none;
+        color:white;
+        }
+    }
+    &LinksTwo{
+        display:flex;
+        flex-direction:column;
+        margin-left:5vw;
+        align-self:center;
+        justify-content:space-around;
+        color:white;
+        justify-self:center;
+        h5{
+            margin-bottom:-2vh;
+        }
+    a{
+        text-decoration:none;
+        color:white;
+        }
+    }
+    &Copywrite{
+        grid-area:copywrite;
+        justify-self:center;
+        align-self:center;
+        color:white;
+    }
+}

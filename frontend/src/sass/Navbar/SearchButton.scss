@@ -1,0 +1,27 @@
+    #searchButton{
+        font-size:2.5vh;
+                            @keyframes ColoredBlack{
+                0%{color: red;}
+                100%{color: black;}
+            }
+            animation: ColoredBlack 0.3s ease-in-out;
+        color:black;
+        &:hover{
+            @keyframes ColoredRed{
+                0%{color: black;}
+                100%{color: red;}
+            }
+            animation: ColoredRed 0.3s ease-in-out;
+            color:red;
+            cursor:pointer;
+        }
+}
+
+
+
+@media screen and (orientation:portrait){
+        #searchButton{
+            display:none;
+        }
+
+    }

@@ -1,0 +1,68 @@
+@import "../../constants.scss";
+
+#ClassesMenu{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    background-color:rgb(60,60,60);
+    height: 100%;
+    padding-top: 10vh;
+    justify-content: space-around;
+    box-shadow: 2px 0px 5px rgba(0,0,0,0.5);
+    button{
+        @keyframes ColoredWhite{
+                0%{color: red;}
+                50%{color: black;}
+                100%{color: white;}
+            }
+            cursor:pointer;
+        animation: ColoredWhite 0.3s ease-in-out forwards;
+        background:none;
+        border:none;
+        font-family:$mainFont;
+        font-size:2vh;
+        &:hover{
+            @keyframes ColoredRed{
+                0%{color: white;}
+                50%{color: black;}
+                100%{color: red;}
+            }
+            cursor:pointer;
+            animation: ColoredRed 0.3s ease-in-out forwards;
+            }
+        }
+    }
+
+@media screen and (orientation:landscape){
+    .ClassesMenuFull{
+        width: 30%;
+    }
+    .ClassesMenuReduced{
+        width:30%
+    }
+    #ClassesMenu{
+            @keyframes OpacityIncrease{
+        0%{opacity:0;}
+        100%{opacity:1;}
+    }
+    animation: OpacityIncrease 0.3s ease-in-out forwards;}
+}
+@media screen and (orientation:portrait){
+
+    .ClassesMenuFull{
+
+            @keyframes OpacityIncrease{
+        0%{opacity:0;}
+        100%{opacity:1;}
+    }
+    animation: OpacityIncrease 0.3s ease-in-out forwards;
+        width: 100%;
+    }
+    .ClassesMenuReduced{
+        @keyframes ReduceClassMenu{
+            0%{width:100vw;}
+            100%{width:50vw;}
+            }
+        animation: ReduceClassMenu 0.5s ease-in-out forwards;
+    }
+}

@@ -1,0 +1,118 @@
+    @keyframes fadeIn{
+        0%{
+            background-color:rgba(230,230,230,0.0);
+            backdrop-filter: blur(0px);
+            left:-100vw;
+            }
+        100%{
+            backdrop-filter: blur(5px);
+            background-color:rgba(230,230,230,0.8);
+            left:0vw;
+            }
+    }
+
+#OtherOptions{
+    position:fixed;
+    z-index:4;
+    width:100vw;
+    height:100vh;
+    top:0;
+    backdrop-filter: blur(5px);
+    background-color:rgba(230,230,230,0.8);
+    &Header{
+        width:100vw;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding-inline:5vw;
+        padding-top:10vh;
+        box-sizing:border-box;
+        font-family:$mainFont;
+        font-weight:400;
+        font-style:italic;
+        font-size:4vw;
+        color:black;
+        cursor:pointer;
+        h3{
+            width:60%
+            }
+        &Exit{
+            background:none;
+        }
+    }
+    &Body{
+        display:flex;
+        flex-direction:column;
+        width:80vw;
+        height:70vh;
+        overflow-y:hidden;
+        align-items:center;
+        &Card{
+            width:90%;
+            height:20vh;
+            display:flex;
+            img{
+                height:80%
+            }
+        }
+    }
+}
+@media screen and (orientation:landscape){
+    @keyframes AppearOptions{
+        0%{
+            margin-left:-100vw;
+            opacity:0;
+        }
+        100%{
+            margin-left:0vw;
+            opacity:1;
+            }
+        }
+    @keyframes ApearOtherOptions{
+        0%{
+            background-color:rgba(230,230,230,0.0);
+        }
+        100%{
+            background-color:rgba(230,230,230,0.8);
+            }
+        }
+    #OtherOptions{
+        animation:ApearOtherOptions 0.5s ease-in-out;
+        &Header{
+            animation: AppearOptions 1s ease-in-out;
+            font-size:2vw;
+            h3{
+                width:70%
+                }
+            }
+        &Body{
+            animation: AppearOptions 1s ease-in-out;
+            width:100vw;
+            display:flex;
+            flex-wrap:wrap;
+            flex-direction:row;
+            justify-center:space-around;
+            margin-top:-5vh;
+            &Card{
+                display:flex;
+                flex-direction:column;
+                height:40vh;
+                width:25vw;
+                margin-left:15vw;
+                align-items:center;
+                border-radius:5vh;
+                overflow:hidden;
+
+                img{
+                    width:20vw;
+                }
+            }
+        }
+    }
+}
+@media screen and (orientation:portrait){
+    #OtherOptions{
+        animation:fadeIn 0.5s ease-in-out;
+
+    }
+}

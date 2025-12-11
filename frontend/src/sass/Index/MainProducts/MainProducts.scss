@@ -1,0 +1,105 @@
+#MainProducts{
+    width:100vw;
+    background-color: #bdbdbd;
+    margin-top:0vh;
+    padding-top:0vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    h2{
+        margin-top:0vh;
+        padding-top:10vh;
+        font-size:5vw;
+        font-family:$mainFont;
+        font-weight:400;
+        font-style:italic;
+        color:$redLetters;
+    }
+    #MainProductsContainer{
+        display:flex;
+        flex-direction:row;
+        width:100vw;
+        .MainProductCard{
+            margin-bottom:10vh;
+            box-shadow: 0 0 50px grey;
+            margin-top:10vh;
+            border-radius:5vh;
+            overflow:hidden;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+
+
+
+    }
+}
+
+@media screen and (orientation:portrait){
+    #MainProductsContainer{
+        &Inner{
+            width:auto;
+            display:flex;
+        }
+        flex-wrap:nowrap;
+        justify-content:flex-start;
+        overflow-x:scroll;
+        .MainProductCard{
+            width:40vw;
+            margin-inline:2.5vw;
+            box-shadow: 0 0 50px grey;
+            border-radius:5vh;
+            overflow:hidden;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            h3{
+                font-size:3vw;
+            }
+            img{
+                width:40vw;
+            }
+
+    }
+    }
+}
+@media screen and (orientation:landscape){
+        #MainProductsContainer{
+            display:flex;
+            justify-content:center;
+            &Inner{
+                display:flex;
+                width:100vw;
+            justify-content:space-around;
+            overflow:hidden;
+            .MainProductCard{
+                width:20vw;
+                box-shadow: 0 0 50px grey;
+                border-radius:5vh;
+                overflow:hidden;
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+            h3{
+                font-size:1.5vw;
+            }
+            img{
+                width:90%;
+            }
+        &:not(:hover){
+            transform: scale(1);
+            box-shadow: 0 0 50px grey;
+            cursor:default;
+            transition: all 0.3s ease-in-out;
+            }
+        &:hover{
+            transform: scale(1.1);
+            box-shadow: 0 0 50px $redLetters;
+            cursor:pointer;
+            transition: all 0.3s ease-in-out;
+            }
+        }
+
+        }
+    }
+    }
+    }
