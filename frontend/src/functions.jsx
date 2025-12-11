@@ -1,6 +1,6 @@
 // if after 5 seconds the fetch is not completed, get products by frontend
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "./firebase";
+import { db } from "./Firebase";
 
 const updateBackendProducts = async (data) => {
   try {
