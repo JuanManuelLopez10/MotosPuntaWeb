@@ -10,9 +10,10 @@ app = Flask(__name__)
 db = firestore.Client.from_service_account_json("fscredentials.json")
 
 CORS(app, origins=[
-    "http://localhost:5174", "http://localhost:5177", "http://localhost:5179",
-    "http://127.0.0.1:5177", "http://localhost:5173", "http://127.0.0.1:5173",
-    "http://127.0.0.1:5179"
+    "http://localhost:5174",
+    "http://localhost:5177",
+    "http://127.0.0.1:5173",
+    "https://motos-punta-web-1xmx.vercel.app"
 ])
 
 VERIFY_TOKEN = "motospunta_verify"
