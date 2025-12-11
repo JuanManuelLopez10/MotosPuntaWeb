@@ -2,9 +2,11 @@
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "./Firebase";
 
+const API_URL = "https://Jotaeme10.pythonanywhere.com";
+
 const updateBackendProducts = async (data) => {
   try {
-    await fetch("http://127.0.0.1:5000/api/setProducts", {
+    await fetch(`${API_URL}/api/setProducts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -38,7 +40,7 @@ export const fetchProducts = async (setProducts) => {
   }, 5000);
 
   try {
-    const response = await fetch("http://127.0.0.1:5000/api/products");
+    const response = await fetch(`${API_URL}/api/products`);
     clearTimeout(timeout);
     if (!response.ok) {
       console.warn("Backend devolvió error, uso Firestore...");
@@ -57,7 +59,7 @@ export const fetchProducts = async (setProducts) => {
 
 export const addFilter = async (key, value) => {
     try{
-        const response = await fetch(`http://127.0.0.1:5000/api/filter/${key}/${value}`)
+        const response = await fetch(`${API_URL}/api/filter/${key}/${value}`)
         const data = await response.json()
     }
     catch(error){
@@ -77,7 +79,7 @@ export const getFilters = async () => {
 }
 export const getFilteredProducts = async (setFilteredProducts) => {
     try{
-        const response = await fetch('http://127.0.0.1:5000/api/getFilteredProducts')
+        const response = await fetch(`${API_URL}/api/getFilteredProducts`)
         const data = await response.json()
         setFilteredProducts(data)
     }
@@ -88,7 +90,7 @@ export const getFilteredProducts = async (setFilteredProducts) => {
 
 export const resetFilters = async () => {
     try{
-        const response = await fetch('http://127.0.0.1:5000/api/resetFilters')
+        const response = await fetch(`${API_URL}/api/resetFilters`)
         const data = await response.json()
         return data
     }
@@ -98,7 +100,7 @@ export const resetFilters = async () => {
 }
 export const sortProducts = async (sort) => {
     try{
-        const response = await fetch(`http://127.0.0.1:5000/api/sortBy/${sort}`)
+        const response = await fetch(`${API_URL}/api/sortBy/${sort}`)
         const data = await response.json()
         return data
     }
@@ -108,7 +110,7 @@ export const sortProducts = async (sort) => {
 }
 export const getProductById = async (id) => {
     try{
-        const response = await fetch(`http://127.0.0.1:5000/api/product/${id}`)
+        const response = await fetch(`${API_URL}/api/product/${id}`)
         const data = await response.json()
         return data
     }

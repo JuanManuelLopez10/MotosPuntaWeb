@@ -13,7 +13,7 @@ function BrandsIndex({products}) {
   const fetchBrands = async () => {
       if (!brands[0]){
                 try {
-        const response = await fetch('http://127.0.0.1:5000/api/brands')
+        const response = await fetch('https://Jotaeme10.pythonanywhere.com/api/brands')
         const data = await response.json()
         setBrands(data)
         } catch (error) {
