@@ -10,7 +10,7 @@ function Navbar ({data}){
         setMenuState(!MenuState)
         if (MenuOptions.length === 0){
             try {
-            const response = await fetch('http://127.0.0.1:5000/api/classes')
+            const response = await fetch('/api/classes')
             const data = await response.json()
             setMenuOptions(data)
             }
