@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 from whatsapp_bot import send_message
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="../frontend/dist")
 
 db = firestore.Client.from_service_account_json("fscredentials.json")
 
