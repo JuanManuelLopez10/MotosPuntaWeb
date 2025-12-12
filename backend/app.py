@@ -1,11 +1,19 @@
 from flask_cors import CORS
 import json
 from google.cloud import firestore
-from flask import Flask, request, jsonify
+import os
+from flask import Flask, request, jsonify, send_from_directory
 from whatsapp_bot import send_message
 
 
 app = Flask(__name__, static_folder="../frontend/dist")
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve(path):
+    if path != "" and os.path.exists(app.static_folder + "/" + path):
+        return send_from_directory(app.static_folder, path)
+    return send_from_directory(app.static_folder, "index.html")
 
 db = firestore.Client.from_service_account_json("fscredentials.json")
 
