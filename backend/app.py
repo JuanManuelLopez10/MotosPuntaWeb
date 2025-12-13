@@ -1,31 +1,15 @@
 from flask_cors import CORS
 import json
-import os
-from flask import Flask, request, jsonify
-from google.oauth2 import service_account
 from google.cloud import firestore
+import os
+from flask import Flask, request, jsonify, send_from_directory
 from whatsapp_bot import send_message
 
 
 app = Flask(__name__)
 
 
-# Cargar credenciales de la variable de entorno
-credentials_json = os.getenv("GOOGLE_CREDENTIALS_JSON")
-
-if credentials_json:
-    try:
-        credentials_dict = json.loads(credentials_json)
-        credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-        db = firestore.Client(credentials=credentials, project=credentials_dict.get("project_id"))
-    except Exception as e:
-        print("Error cargando credenciales de Firestore:", e)
-        db = None
-else:
-    print("⚠️ GOOGLE_CREDENTIALS_JSON no está definida, Firestore no se inicializará")
-    db = None
-
-
+db = firestore.Client.from_service_account_json("fscredentials.json")
 
 CORS(app, origins=[
     "http://localhost:5174",
@@ -105,24 +89,18 @@ def send():
 
 @app.route("/api/filter/<KEY>/<VALUE>")
 def addFilter(KEY, VALUE):
-    if db is None:
-        return jsonify({"error": "Firestore no está inicializado"}), 500
     global filters
     filters[KEY] = VALUE
     return jsonify(filters)
 
 @app.route("/api/getFilteredProducts")
 def getFilteredProducts():
-    if db is None:
-        return jsonify({"error": "Firestore no está inicializado"}), 500
     global filteredProducts
     filteredProducts = filterProducts()
     return jsonify(filteredProducts)
 
 @app.route("/api/resetFilters")
 def resetFilters():
-    if db is None:
-        return jsonify({"error": "Firestore no está inicializado"}), 500
     global filters
     filters = {"type":"", "brand": "", "color": "", "size": "", "MinPrice": "", "MaxPrice": ""}
     return jsonify(filters)
@@ -133,16 +111,12 @@ def getFilters():
 
 @app.route("/api/brands")
 def get_brands():
-    if db is None:
-        return jsonify({"error": "Firestore no está inicializado"}), 500
     with open("brands.json", "r", encoding="utf-8") as file:
         data = json.load(file)  # Carga el JSON como un diccionario de Python
     return jsonify(data)
 
 @app.route("/api/classes")
 def get_classes():
-    if db is None:
-        return jsonify({"error": "Firestore no está inicializado"}), 500
     global productos
     classes = []
     types = []
@@ -157,8 +131,6 @@ def get_classes():
 
 @app.route("/api/sortBy/<sortValue>")
 def sortProducts(sortValue):
-    if db is None:
-        return jsonify({"error": "Firestore no está inicializado"}), 500
     global filteredProducts
     if sortValue == "price-desc":
         filteredProducts.sort(key=lambda x: x["price"], reverse=True)
@@ -172,8 +144,6 @@ def sortProducts(sortValue):
 
 @app.route("/api/setProducts", methods=["POST"])
 def set_products():
-    if db is None:
-        return jsonify({"error": "Firestore no está inicializado"}), 500
     global productos
     data = request.get_json()  # esperamos un array de productos
     if isinstance(data, list):
@@ -183,8 +153,6 @@ def set_products():
 
 @app.route("/api/products")
 def get_productos():
-    if db is None:
-        return jsonify({"error": "Firestore no está inicializado"}), 500
     global productos
     if not productos:
         productos_ref = db.collection("products")
@@ -201,8 +169,6 @@ def get_productos():
 
 @app.route("/api/product/<productId>")
 def get_product_by_db(productId):
-    if db is None:
-        return jsonify({"error": "Firestore no está inicializado"}), 500
     try:
         product_ref = db.collection("products").document(productId)
         doc = product_ref.get()
@@ -219,8 +185,6 @@ def get_product_by_db(productId):
 
 @app.route("/api/filteredProducts")
 def get_filteredProducts():
-    if db is None:
-        return jsonify({"error": "Firestore no está inicializado"}), 500
     global filteredProducts
     if not filteredProducts:
         filteredProducts = []
@@ -228,8 +192,6 @@ def get_filteredProducts():
 
 @app.route("/api/sendMessage", methods=["POST"])
 def send_message_route():
-    if db is None:
-        return jsonify({"error": "Firestore no está inicializado"}), 500
     data = request.json
     to = data.get("to")
     message = data.get("message")
