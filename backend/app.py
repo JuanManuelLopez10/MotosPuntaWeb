@@ -10,6 +10,11 @@ app = Flask(__name__)
 
 credentials_json = os.getenv("GOOGLE_CREDENTIALS")
 
+with open("fscredentials.json", "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+print(json.dumps(data))
+
 if credentials_json:
     try:
         credentials_dict = json.loads(credentials_json)
@@ -20,15 +25,16 @@ if credentials_json:
         print("❌ Error cargando credenciales de Firestore:", e)
         db = None
 else:
-    print("⚠️ GOOGLE_CREDENTIALS_JSON no está definida, Firestore no se inicializará")
+    print("⚠️ GOOGLE_CREDENTIALS no está definida, Firestore no se inicializará")
     db = None
 
-CORS(app, origins=[
-    "http://localhost:5174",
-    "http://localhost:5177",
-    "http://127.0.0.1:5173",
-    "https://motos-punta-web-1xmx.vercel.app"
-])
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "https://motos-punta-web-jsjo.vercel.app"
+        ]
+    }
+})
 
 VERIFY_TOKEN = "motospunta_verify"
 productos = []
