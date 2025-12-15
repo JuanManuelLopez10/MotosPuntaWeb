@@ -10,11 +10,6 @@ app = Flask(__name__)
 
 credentials_json = os.getenv("GOOGLE_CREDENTIALS")
 
-with open("fscredentials.json", "r", encoding="utf-8") as f:
-    data = json.load(f)
-
-print(json.dumps(data))
-
 if credentials_json:
     try:
         credentials_dict = json.loads(credentials_json)
