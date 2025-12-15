@@ -10,7 +10,7 @@ function Navbar ({data}){
         setMenuState(!MenuState)
         if (MenuOptions.length === 0){
             try {
-            const response = await fetch('/api/classes')
+            const response = await fetch('https://motospuntaweb.onrender.com/api/classes')
             const data = await response.json()
             setMenuOptions(data)
             }

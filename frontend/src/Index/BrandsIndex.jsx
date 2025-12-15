@@ -13,7 +13,7 @@ function BrandsIndex({products}) {
   const fetchBrands = async () => {
       if (!brands[0]){
                 try {
-        const response = await fetch('/api/brands')
+        const response = await fetch('https://motospuntaweb.onrender.com/api/brands')
         const data = await response.json()
         setBrands(data)
         } catch (error) {
