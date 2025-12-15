@@ -1,15 +1,27 @@
 from flask_cors import CORS
 import json
 from google.cloud import firestore
+from google.oauth2 import service_account
 import os
 from flask import Flask, request, jsonify, send_from_directory
 from whatsapp_bot import send_message
 
-
 app = Flask(__name__)
 
+credentials_json = os.getenv("GOOGLE_CREDENTIALS")
 
-db = firestore.Client.from_service_account_json("fscredentials.json")
+if credentials_json:
+    try:
+        credentials_dict = json.loads(credentials_json)
+        credentials = service_account.Credentials.from_service_account_info(credentials_dict)
+        db = firestore.Client(credentials=credentials, project=credentials_dict.get("project_id"))
+        print("✅ Firestore inicializado correctamente")
+    except Exception as e:
+        print("❌ Error cargando credenciales de Firestore:", e)
+        db = None
+else:
+    print("⚠️ GOOGLE_CREDENTIALS_JSON no está definida, Firestore no se inicializará")
+    db = None
 
 CORS(app, origins=[
     "http://localhost:5174",
