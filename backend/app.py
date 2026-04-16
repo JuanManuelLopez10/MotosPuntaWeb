@@ -26,7 +26,8 @@ else:
 CORS(app, resources={
     r"/*": {
         "origins": [
-            "https://motos-punta-web-jsjo.vercel.app"
+            "https://motos-punta-web-jsjo.vercel.app",
+            "http://localhost:5173/"
         ]
     }
 })
