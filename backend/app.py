@@ -7,7 +7,21 @@ from flask import Flask, request, jsonify, send_from_directory
 from whatsapp_bot import send_message
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://motospuntaweb.vercel.app"}})
+
+
+def get_allowed_origins():
+    configured_origins = os.getenv(
+        "ALLOWED_ORIGINS",
+        "https://motospuntaweb.vercel.app,http://localhost:5173",
+    )
+    return [origin.strip() for origin in configured_origins.split(",") if origin.strip()]
+
+
+CORS(
+    app,
+    resources={r"/*": {"origins": get_allowed_origins()}},
+    supports_credentials=True,
+)
 
 credentials_json = os.getenv("GOOGLE_CREDENTIALS")
 

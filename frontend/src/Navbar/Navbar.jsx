@@ -1,6 +1,7 @@
 import { BsSearch, BsList, BsX } from "react-icons/bs";
 import { useState, useEffect } from 'react'
 import NavbarMenu from "./components/NavbarMenu";
+import { buildApiUrl } from "../api";
 
 
 function Navbar ({data}){
@@ -10,7 +11,7 @@ function Navbar ({data}){
         setMenuState(!MenuState)
         if (MenuOptions.length === 0){
             try {
-            const response = await fetch('https://motospuntaweb.onrender.com/api/classes')
+            const response = await fetch(buildApiUrl('/api/classes'))
             const data = await response.json()
             setMenuOptions(data)
             }
