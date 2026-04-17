@@ -37,7 +37,7 @@ export const fetchProducts = async (setProducts) => {
       setProducts(data);
       await updateBackendProducts(data);
     });
-  }, 5000);
+  }, 50000);
 
   try {
     const response = await fetch("https://motospuntaweb.onrender.com/api/products");
