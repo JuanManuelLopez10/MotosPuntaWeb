@@ -131,9 +131,34 @@ def getFilters():
 
 @app.route("/api/brands")
 def get_brands():
-    with open("brands.json", "r", encoding="utf-8") as file:
-        data = json.load(file)  # Carga el JSON como un diccionario de Python
-    return jsonify(data)
+    brands_path = os.path.join(os.path.dirname(__file__), "brands.json")
+
+    if os.path.exists(brands_path):
+        with open(brands_path, "r", encoding="utf-8") as file:
+            data = json.load(file)
+        return jsonify(data)
+
+    global productos
+
+    if not productos and db is not None:
+        productos_ref = db.collection("products")
+        docs = productos_ref.stream()
+        productos = []
+        for doc in docs:
+            data = doc.to_dict()
+            data["id"] = doc.id
+            productos.append(data)
+
+    unique_brands = []
+    seen_brands = set()
+
+    for prod in productos:
+        brand = prod.get("brand")
+        if brand and brand not in seen_brands:
+            seen_brands.add(brand)
+            unique_brands.append({"brand": brand, "bgDark": "#4b5563"})
+
+    return jsonify(unique_brands)
 
 @app.route("/api/classes")
 def get_classes():
