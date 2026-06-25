@@ -3,8 +3,9 @@ import json
 from google.cloud import firestore
 from google.oauth2 import service_account
 import os
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 from whatsapp_bot import send_message
+from meta_feed import build_feed_csv
 
 app = Flask(__name__)
 
@@ -243,6 +244,24 @@ def send_message_route():
 
     result = send_message(to, message)
     return jsonify(result)
+
+
+@app.route("/meta-feed.csv")
+def meta_feed_csv():
+    """Feed de productos para el catalogo de Meta (origen de datos por URL).
+    Lee SIEMPRE fresco de Firestore para que el stock este al dia."""
+    if db is None:
+        return Response("Firestore no inicializado", status=503, mimetype="text/plain")
+    items = []
+    for doc in db.collection("products").stream():
+        d = doc.to_dict()
+        d["id"] = doc.id
+        items.append(d)
+    return Response(
+        build_feed_csv(items),
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "inline; filename=meta-feed.csv"},
+    )
 
 
 if __name__ == "__main__":
