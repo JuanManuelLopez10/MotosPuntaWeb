@@ -5,9 +5,11 @@ de Firestore (coleccion 'products'). Cada talle ofrecido de cada producto = una
 variante (item), agrupadas por item_group_id.
 
 Reglas (acordadas con el negocio):
-- El stock se determina SOLO por el campo 'availability' ("in stock" => en stock).
-- Los talles que ofrece un producto = los flags de talle que esten en true.
-- El link se arma con el dominio oficial https://motospunta.uy
+- Productos CON talles: cada flag de talle en true = ese talle tiene stock => una
+  variante "in stock". El item_group_id es el id del documento (unico por color+diseno),
+  asi cada color/diseno es su propio producto en Meta y los talles son sus variantes.
+- Productos SIN talles cargados: un solo item; el stock sale del campo 'availability'.
+- El link se arma con el dominio oficial https://motospunta.uy usando el titulo
   (los links guardados en Firestore apuntan a un dominio viejo; actualizarlos es
    una tarea pendiente aparte).
 """
@@ -59,27 +61,35 @@ def product_to_rows(prod):
     avail = "in stock" if str(prod.get("availability", "")).strip().lower() == "in stock" else "out of stock"
     price = _price(prod.get("price", ""))
     image = (prod.get("imageLink") or "").strip()
-    igid = _clean(prod.get("itemGroupId") or prod.get("idd") or prod.get("id") or "")
-    base_id = _clean(prod.get("id") or prod.get("idd") or igid)   # id del documento = unico
+    # link_key (= titulo) arma la ruta de la web; group_id (= id del doc, unico por
+    # color+diseno) agrupa las VARIANTES de talle en Meta. Antes ambos eran el titulo,
+    # por eso TODOS los colores de un modelo se fusionaban en un solo producto.
+    link_key = _clean(prod.get("itemGroupId") or prod.get("idd") or prod.get("id") or "")
+    group_id = _clean(prod.get("id") or prod.get("idd") or link_key)
     title = (prod.get("title") or "").strip()
     desc = (prod.get("description") or "").strip() or title
     common = {
-        "title": title, "description": desc, "availability": avail,
+        "title": title, "description": desc,
         "condition": "new", "price": price, "image_link": image,
-        "link": f"{SITE}/product/{quote(igid)}" if igid else SITE,
+        "link": f"{SITE}/product/{quote(link_key)}" if link_key else SITE,
         "brand": (prod.get("brand") or "").strip(),
-        "item_group_id": igid,
+        "item_group_id": group_id,
         "color": (prod.get("color") or "").strip(),
         "product_type": (prod.get("productType") or "").strip(),
     }
     sizes = _offered_sizes(prod)
     if sizes:
+        # Un talle ofrecido = hay stock de ese talle (flag en true). Cada talle = una
+        # variante "in stock" del mismo grupo (color+diseno).
         rows = []
         for sz in sizes:
-            r = dict(common); r["id"] = f"{base_id}-{sz}"; r["size"] = sz
+            r = dict(common); r["id"] = f"{group_id}-{sz}"; r["size"] = sz
+            r["availability"] = "in stock"
             rows.append(r)
         return rows
-    r = dict(common); r["id"] = base_id; r["size"] = ""
+    # Producto sin talles cargados: un solo item; el stock sale del campo 'availability'.
+    r = dict(common); r["id"] = group_id; r["size"] = ""
+    r["availability"] = avail
     return [r]
 
 
