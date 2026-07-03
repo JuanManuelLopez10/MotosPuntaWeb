@@ -15,6 +15,8 @@ Reglas (acordadas con el negocio):
 """
 import csv
 import io
+import re
+import unicodedata
 from urllib.parse import quote
 from concurrent.futures import ThreadPoolExecutor
 
@@ -68,10 +70,32 @@ def _offered_sizes(prod):
     return [label for key, label in _SIZES if key in lower and _truthy(lower[key])]
 
 
+def _catalog_slug(title, pattern, color):
+    """Mismo slug que la app (Product.kt catalogSlug) y el sync: title+pattern+color en
+    minusculas, sin acentos, sin espacios. 'MT Stinger 2 Meld Rojo' -> 'mtstinger2meldrojo'."""
+    s = f"{title} {pattern} {color}"
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
+    return re.sub(r"\s+", "", s).lower()
+
+
+def _effective_image(prod):
+    """imageLink guardado; si esta vacio, arma la URL de R2 por nombre (productos sin foto).
+    El feed despues verifica que exista en R2 antes de incluir el producto."""
+    img = (prod.get("imageLink") or "").strip()
+    if img:
+        return img
+    slug = _catalog_slug(
+        (prod.get("title") or "").strip(),
+        (prod.get("pattern") or "").strip(),
+        (prod.get("color") or "").strip(),
+    )
+    return f"{R2_CATALOG_URL_PREFIX}{slug}.png" if slug else ""
+
+
 def product_to_rows(prod):
     avail = "in stock" if str(prod.get("availability", "")).strip().lower() == "in stock" else "out of stock"
     price = _price(prod.get("price", ""))
-    image = (prod.get("imageLink") or "").strip()
+    image = _effective_image(prod)
     # link_key (= titulo) arma la ruta de la web; group_id (= id del doc, unico por
     # color+diseno) agrupa las VARIANTES de talle en Meta. Antes ambos eran el titulo,
     # por eso TODOS los colores de un modelo se fusionaban en un solo producto.
@@ -110,7 +134,7 @@ def _missing_r2_images(products):
     beneficio de la duda (no se descarta el producto)."""
     if requests is None:
         return set()
-    urls = {(p.get("imageLink") or "").strip() for p in products}
+    urls = {_effective_image(p) for p in products}
     urls = {u for u in urls if u.startswith(R2_CATALOG_URL_PREFIX)}
     if not urls:
         return set()
@@ -135,7 +159,7 @@ def build_feed_rows(products, only_in_stock=False, require_image=True):
     seen = set()
     missing_r2 = _missing_r2_images(products) if require_image else set()
     for p in products:
-        img = (p.get("imageLink") or "").strip()
+        img = _effective_image(p)
         if require_image and not img:
             continue
         if img in missing_r2:
