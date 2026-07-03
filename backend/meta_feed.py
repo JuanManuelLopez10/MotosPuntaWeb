@@ -16,8 +16,19 @@ Reglas (acordadas con el negocio):
 import csv
 import io
 from urllib.parse import quote
+from concurrent.futures import ThreadPoolExecutor
+
+try:
+    import requests
+except Exception:
+    requests = None
 
 SITE = "https://motospunta.uy"
+
+# Base publica de las fotos del catalogo en R2 (las que la app arma por nombre).
+# El feed verifica que la foto exista antes de incluir el producto, asi uno recien
+# creado cuya foto todavia no se subio no aparece roto en el catalogo.
+R2_CATALOG_URL_PREFIX = "https://pub-bf9ca1311dd14422b325c7934e5e96c0.r2.dev/catalog/"
 
 # Talles conocidos: (clave en Firestore en minuscula, etiqueta para Meta)
 _CLOTHING = [("xs", "XS"), ("s", "S"), ("m", "M"), ("l", "L"),
@@ -93,12 +104,42 @@ def product_to_rows(prod):
     return [r]
 
 
+def _missing_r2_images(products):
+    """Set de imageLinks de R2 (catalog/) que NO existen todavia (HEAD 404). Solo revisa
+    las de R2; las viejas (freeimage) se asumen validas. Ante error de red se da el
+    beneficio de la duda (no se descarta el producto)."""
+    if requests is None:
+        return set()
+    urls = {(p.get("imageLink") or "").strip() for p in products}
+    urls = {u for u in urls if u.startswith(R2_CATALOG_URL_PREFIX)}
+    if not urls:
+        return set()
+
+    def head_404(u):
+        try:
+            r = requests.head(u, timeout=6, allow_redirects=True)
+            return u if r.status_code == 404 else None
+        except Exception:
+            return None  # error de red -> no descartar
+
+    missing = set()
+    with ThreadPoolExecutor(max_workers=16) as ex:
+        for res in ex.map(head_404, urls):
+            if res:
+                missing.add(res)
+    return missing
+
+
 def build_feed_rows(products, only_in_stock=False, require_image=True):
     rows = []
     seen = set()
+    missing_r2 = _missing_r2_images(products) if require_image else set()
     for p in products:
-        if require_image and not (p.get("imageLink") or "").strip():
+        img = (p.get("imageLink") or "").strip()
+        if require_image and not img:
             continue
+        if img in missing_r2:
+            continue  # foto de R2 aun no subida -> se omite hasta que exista
         for r in product_to_rows(p):
             if not r["price"]:
                 continue  # Meta exige precio
