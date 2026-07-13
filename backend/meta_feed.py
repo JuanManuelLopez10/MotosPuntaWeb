@@ -70,10 +70,12 @@ def _offered_sizes(prod):
     return [label for key, label in _SIZES if key in lower and _truthy(lower[key])]
 
 
-def _catalog_slug(title, pattern, color):
-    """Mismo slug que la app (Product.kt catalogSlug) y el sync: title+pattern+color en
-    minusculas, sin acentos, sin espacios. 'MT Stinger 2 Meld Rojo' -> 'mtstinger2meldrojo'."""
-    s = f"{title} {pattern} {color}"
+def _catalog_slug(title, pattern, color, acabado=""):
+    """Mismo slug que la app (Product.kt catalogSlug) y el sync: title+pattern+color+acabado
+    en minusculas, sin acentos, sin espacios. 'MT Stinger 2 Meld Rojo' -> 'mtstinger2meldrojo'.
+    El acabado (solo cascos: Brillo/Mate) desambigua un mismo color en distinto acabado; en el
+    resto va vacio y el slug queda igual que antes."""
+    s = f"{title} {pattern} {color} {acabado}"
     s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode()
     return re.sub(r"\s+", "", s).lower()
 
@@ -88,6 +90,7 @@ def _effective_image(prod):
         (prod.get("title") or "").strip(),
         (prod.get("pattern") or "").strip(),
         (prod.get("color") or "").strip(),
+        (prod.get("acabado") or "").strip(),
     )
     return f"{R2_CATALOG_URL_PREFIX}{slug}.png" if slug else ""
 
@@ -103,13 +106,18 @@ def product_to_rows(prod):
     group_id = _clean(prod.get("id") or prod.get("idd") or link_key)
     title = (prod.get("title") or "").strip()
     desc = (prod.get("description") or "").strip() or title
+    # El acabado (solo cascos) se suma al color para que la variante se vea distinta en
+    # Meta: "Negro" (brillo) vs "Negro Mate". En el resto el acabado va vacio.
+    color = (prod.get("color") or "").strip()
+    acabado = (prod.get("acabado") or "").strip()
+    color_label = f"{color} {acabado}".strip() if acabado else color
     common = {
         "title": title, "description": desc,
         "condition": "new", "price": price, "image_link": image,
         "link": f"{SITE}/product/{quote(link_key)}" if link_key else SITE,
         "brand": (prod.get("brand") or "").strip(),
         "item_group_id": group_id,
-        "color": (prod.get("color") or "").strip(),
+        "color": color_label,
         "product_type": (prod.get("productType") or "").strip(),
     }
     sizes = _offered_sizes(prod)
