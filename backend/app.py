@@ -246,6 +246,37 @@ def send_message_route():
     return jsonify(result)
 
 
+@app.route("/api/leads", methods=["POST"])
+def create_lead():
+    """Guarda un lead (contacto o solicitud de financiación) en Firestore (colección
+    'leads'). Requiere nombre y un dato de contacto. Honeypot 'website' anti-spam."""
+    if db is None:
+        return jsonify({"error": "Base de datos no disponible"}), 503
+    data = request.get_json(silent=True) or {}
+    # Honeypot: los bots suelen completar todos los campos; si viene, se descarta.
+    if str(data.get("website") or "").strip():
+        return jsonify({"ok": True}), 200
+    nombre = str(data.get("nombre") or "").strip()
+    contacto = str(data.get("contacto") or "").strip()
+    if not nombre or not contacto:
+        return jsonify({"error": "Nombre y contacto son obligatorios"}), 400
+    lead = {
+        "nombre": nombre[:120],
+        "contacto": contacto[:120],
+        "mensaje": str(data.get("mensaje") or "").strip()[:2000],
+        "tipo": str(data.get("tipo") or "contacto").strip()[:40],
+        "producto": str(data.get("producto") or "").strip()[:200],
+        "extra": data.get("extra") if isinstance(data.get("extra"), dict) else {},
+        "estado": "nuevo",
+        "createdAt": firestore.SERVER_TIMESTAMP,
+    }
+    try:
+        ref = db.collection("leads").add(lead)
+        return jsonify({"ok": True, "id": ref[1].id}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/meta-feed.csv")
 def meta_feed_csv():
     """Feed de productos para el catalogo de Meta (origen de datos por URL).
