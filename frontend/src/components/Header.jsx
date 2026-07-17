@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { SITE, waLink } from "../data/site";
 import "./Header.css";
@@ -14,6 +14,9 @@ const NAV = [
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  // Solo el Home tiene hero de imagen oscura: ahí el header va transparente (texto claro).
+  // En el resto (fondo gris claro) va sólido para que los links se lean.
+  const isHome = useLocation().pathname === "/";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -28,7 +31,7 @@ export default function Header() {
   }, [open]);
 
   return (
-    <header className={`hdr ${scrolled ? "hdr--solid" : ""}`}>
+    <header className={`hdr ${scrolled || !isHome ? "hdr--solid" : ""}`}>
       <div className="container hdr__row">
         <Link to="/" className="hdr__logo" aria-label="Motos Punta — inicio">
           <img src="/LOGO.png" alt="Motos Punta" height="34" />
