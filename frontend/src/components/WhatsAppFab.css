@@ -1,0 +1,17 @@
+.wafab {
+  position: fixed;
+  right: clamp(16px, 4vw, 28px);
+  bottom: clamp(16px, 4vw, 28px);
+  z-index: 45;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: #25D366;
+  box-shadow: 0 10px 30px rgba(37, 211, 102, 0.35), 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.wafab:hover { transform: translateY(-3px) scale(1.04); box-shadow: 0 16px 40px rgba(37, 211, 102, 0.45); }
+.wafab:active { transform: translateY(0) scale(0.98); }

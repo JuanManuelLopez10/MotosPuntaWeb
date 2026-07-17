@@ -1,0 +1,56 @@
+.ct { padding-top: calc(var(--header-h) + var(--sp-7)); padding-bottom: var(--sp-8); }
+.ct__grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(var(--sp-5), 6vw, var(--sp-8)); align-items: start; }
+
+.ct__title { font-size: clamp(2.4rem, 6vw, 4rem); margin: var(--sp-2) 0 var(--sp-4); }
+.ct__sub { color: var(--text-muted); font-size: 1.08rem; margin-bottom: var(--sp-6); max-width: 40ch; }
+.ct__channels { display: flex; flex-direction: column; gap: var(--sp-3); }
+.ct__channel {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  color: var(--text); font-weight: 500; transition: color var(--dur) var(--ease);
+}
+.ct__channel svg { color: var(--accent-bright); flex-shrink: 0; }
+.ct__channel:hover { color: var(--accent-bright); }
+
+/* Formulario */
+.ct__formWrap {
+  padding: clamp(var(--sp-5), 4vw, var(--sp-6));
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+.ct__form { display: flex; flex-direction: column; gap: var(--sp-4); }
+.ct__field { display: flex; flex-direction: column; gap: var(--sp-2); }
+.ct__field > span {
+  font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.05em;
+  font-size: 0.8rem; font-weight: 600; color: var(--text-muted);
+}
+.ct__field input, .ct__field textarea {
+  width: 100%; padding: var(--sp-3);
+  background: var(--surface-2); color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius); outline: none;
+  transition: border-color var(--dur) var(--ease); resize: vertical;
+}
+.ct__field input { height: 46px; }
+.ct__field input:focus, .ct__field textarea:focus { border-color: var(--accent); }
+.ct__field input::placeholder, .ct__field textarea::placeholder { color: var(--text-faint); }
+
+.ct__hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+.ct__err { color: var(--danger); font-size: 0.9rem; }
+.ct__submit { margin-top: var(--sp-1); align-self: flex-start; }
+.ct__spin { animation: ctspin 0.8s linear infinite; }
+@keyframes ctspin { to { transform: rotate(360deg); } }
+.ct__note { color: var(--text-faint); font-size: 0.82rem; }
+.ct__note a { color: var(--text-muted); text-decoration: underline; }
+.ct__note a:hover { color: var(--accent-bright); }
+
+/* Éxito */
+.ct__success { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--sp-3); padding: var(--sp-6) 0; }
+.ct__success svg { color: var(--success); }
+.ct__success h2 { font-size: 1.6rem; }
+.ct__success p { color: var(--text-muted); max-width: 32ch; }
+.ct__success .btn { margin-top: var(--sp-3); }
+
+@media (max-width: 800px) {
+  .ct__grid { grid-template-columns: 1fr; }
+  .ct__intro { margin-bottom: var(--sp-2); }
+}

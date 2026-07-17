@@ -1,2 +1,10 @@
 backend/fscredentials.json
 backend/brands.json
+
+# Tooling de IA (Impeccable) — reinstalable con `npx impeccable install`
+.claude/
+.agents/
+.codex/
+
+# Video del hero (43MB) — vive local; para el deploy resolver aparte
+frontend/public/Wallpaper.mp4

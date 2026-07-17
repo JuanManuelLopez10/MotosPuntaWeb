@@ -1,0 +1,75 @@
+.ftr {
+  border-top: 1px solid var(--border);
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.03));
+  margin-top: var(--sp-9);
+}
+.ftr__grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1.2fr 1.4fr;
+  gap: var(--sp-6);
+  padding-block: var(--sp-8) var(--sp-6);
+}
+.ftr__brand img { margin-bottom: var(--sp-4); }
+.ftr__tag { color: var(--text-muted); font-size: 0.95rem; max-width: 32ch; }
+.ftr__col { display: flex; flex-direction: column; gap: var(--sp-3); }
+.ftr__h {
+  font-size: 0.9rem;
+  color: var(--text);
+  letter-spacing: 0.08em;
+  margin-bottom: var(--sp-1);
+}
+.ftr__col a {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  transition: color var(--dur) var(--ease);
+}
+.ftr__col a:hover { color: var(--accent-bright); }
+.ftr__map {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  min-height: 160px;
+}
+.ftr__map iframe { width: 100%; height: 100%; min-height: 160px; border: 0; filter: grayscale(0.3) contrast(1.05) brightness(0.85); }
+.ftr__mapBtn {
+  width: 100%;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  color: var(--text-muted);
+  background:
+    radial-gradient(90% 90% at 50% 0%, rgba(225, 19, 34, 0.08), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(0,0,0,0.02) 0 12px, transparent 12px 24px),
+    var(--surface-2);
+  transition: color var(--dur) var(--ease);
+}
+.ftr__mapBtn:hover { color: var(--accent-bright); }
+.ftr__mapAddr { font-size: 0.85rem; color: var(--text-faint); }
+
+.ftr__bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-4);
+  padding-block: var(--sp-5);
+  border-top: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: 0.85rem;
+}
+.ftr__legal { color: var(--text-muted); }
+.ftr__legal:hover { color: var(--text); }
+
+@media (max-width: 900px) {
+  .ftr__grid { grid-template-columns: 1fr 1fr; }
+  .ftr__map { grid-column: 1 / -1; min-height: 220px; }
+}
+@media (max-width: 560px) {
+  .ftr__grid { grid-template-columns: 1fr; }
+  .ftr__bottom { flex-direction: column; align-items: flex-start; }
+}

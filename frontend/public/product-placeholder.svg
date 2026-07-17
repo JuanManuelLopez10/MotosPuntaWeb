@@ -1,0 +1,11 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Foto no disponible">
+  <rect width="400" height="400" fill="#1D1D22"/>
+  <g opacity="0.5" stroke="#6A6A73" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <circle cx="128" cy="250" r="46"/>
+    <circle cx="288" cy="250" r="46"/>
+    <path d="M128 250 L196 250 L232 196 L300 196"/>
+    <path d="M196 250 L246 168 L296 168"/>
+    <path d="M232 196 L288 250"/>
+  </g>
+  <text x="200" y="336" text-anchor="middle" font-family="'Oswald','Arial Narrow',sans-serif" font-size="20" letter-spacing="2" fill="#6A6A73">MOTOS PUNTA</text>
+</svg>

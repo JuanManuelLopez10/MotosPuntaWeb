@@ -1,0 +1,102 @@
+.hdr {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    backdrop-filter var(--dur) var(--ease);
+  border-bottom: 1px solid transparent;
+}
+.hdr--solid {
+  background: rgba(10, 10, 11, 0.85);
+  backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom-color: var(--border);
+}
+/* Sobre el hero (header transparente) el texto va claro; al volverse sólido, oscuro */
+.hdr:not(.hdr--solid) .hdr__link { color: rgba(255, 255, 255, 0.88); }
+.hdr:not(.hdr--solid) .hdr__link:hover,
+.hdr:not(.hdr--solid) .hdr__link.active { color: #fff; }
+.hdr:not(.hdr--solid) .hdr__burger { color: #fff; }
+.hdr__row { display: flex; align-items: center; gap: var(--sp-5); width: 100%; }
+/* El logo sobresale del header (posición absoluta): así se agranda sin cambiar el alto
+   del header ni empujar el resto del contenido. Se reserva su ancho para que el menú
+   no se corra debajo. */
+.hdr__logo {
+  position: relative;
+  width: 116px;
+  height: var(--header-h);
+  margin-right: auto;
+  flex-shrink: 0;
+}
+.hdr__logo img {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  height: 104px;   /* ~50% más grande que antes; cuelga por debajo del header */
+  width: auto;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
+}
+
+.hdr__link--hot { color: var(--accent-bright) !important; }
+.hdr__link--hot:hover { color: var(--accent) !important; }
+
+.hdr__nav { display: flex; align-items: center; gap: var(--sp-6); }
+.hdr__link {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: var(--sp-1) 0;
+  position: relative;
+  transition: color var(--dur) var(--ease);
+}
+.hdr__link:hover { color: var(--text); }
+.hdr__link.active { color: var(--text); }
+.hdr__link.active::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -6px;
+  height: 2px;
+  background: var(--accent);
+}
+
+.hdr__burger { display: none; color: var(--text); padding: var(--sp-1); }
+
+.hdr__mobile {
+  position: fixed;
+  inset: var(--header-h) 0 0 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
+  z-index: 49;
+}
+.hdr__mobileNav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-6) var(--gutter);
+}
+.hdr__mobileLink {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--text);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.hdr__mobileLink.active { color: var(--accent-bright); }
+
+@media (max-width: 820px) {
+  .hdr__nav, .hdr__cta { display: none; }
+  .hdr__burger { display: inline-flex; }
+}
+@media (max-width: 560px) {
+  .hdr__logo { width: 90px; }
+  .hdr__logo img { height: 80px; }
+}

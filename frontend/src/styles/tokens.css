@@ -1,0 +1,51 @@
+/* Motos Punta — design tokens. Ver DESIGN.md (raíz del repo). Un solo sistema.
+   TEMA: claro (probando). Para volver al oscuro, ver los valores comentados abajo. */
+:root {
+  /* Color — TEMA CLARO */
+  --bg: #0A0A0B;
+  --surface: #141417;
+  --surface-2: #1D1D22;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #FAFAFA;
+  --text-muted: #9A9AA3;
+  --text-faint: #6A6A73;
+  --accent: #E11322;
+  --accent-hover: #C10E1C;
+  --accent-bright: #FF3B47;
+  --accent-dim: rgba(225, 19, 34, 0.10);
+  --success: #1FA463;
+  --danger: #D93A3F;
+
+  /* Type */
+  --font-display: 'Oswald', 'Arial Narrow', sans-serif;
+  --font-sans: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+
+  /* Spacing (base 4px) */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px; --sp-5: 24px;
+  --sp-6: 32px; --sp-7: 48px; --sp-8: 64px; --sp-9: 96px;
+
+  /* Layout */
+  --container: 1200px;
+  --gutter: clamp(16px, 5vw, 40px);
+  --header-h: 76px;
+
+  /* Radius — un solo sistema de esquinas */
+  --radius-sm: 4px; --radius: 6px; --radius-lg: 12px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur: 0.28s;
+
+  /* Elevation */
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --glow: 0 0 0 1px var(--accent-dim), 0 14px 34px rgba(225, 19, 34, 0.16);
+
+  /* --- TEMA OSCURO (para revertir): ---
+  --bg:#0A0A0B; --surface:#141417; --surface-2:#1D1D22;
+  --border:rgba(255,255,255,.09); --border-strong:rgba(255,255,255,.16);
+  --text:#FAFAFA; --text-muted:#9A9AA3; --text-faint:#6A6A73;
+  --accent-bright:#FF3B47; --success:#2FBF71; --danger:#FF5A5F;
+  --shadow:0 12px 40px rgba(0,0,0,.45);
+  */
+}
