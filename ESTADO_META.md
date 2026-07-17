@@ -47,9 +47,9 @@ datos en `data/`, helpers en `lib/`, estilos en `styles/`). Se prueba con dev se
   → Firestore `leads`.
 - **Backend** (`backend/app.py`): endpoint **`POST /api/leads`** (contacto y financiación → colección
   `leads`). **YA COMMITEADO Y DEPLOYADO en Render** (commit `35b3877`, probado en vivo HTTP 201).
-- Tema: **GRIS CLARO** (fondo `#ECECEF`, cards blancas, texto oscuro; valores en `styles/tokens.css`, con el
-  OSCURO comentado para revertir). El header es transparente con texto blanco SOLO en el Home (sobre el hero
-  de imagen); en el resto de las páginas es sólido claro con texto oscuro (`Header.jsx` usa `isHome`).
+- Tema: **OSCURO** (fondo `#0A0A0B`, texto claro, acento rojo; valores en `styles/tokens.css`, con el GRIS
+  CLARO comentado por si se quiere probar de nuevo). Header transparente con texto blanco sobre el hero y
+  sólido al scrollear. (JM probó gris claro y volvió al oscuro.)
 
 **HECHO en la app Kotlin (AppByKotlin) — SIN COMMITEAR:**
 - **migrateImageLinks()** (`ProductRepository.kt` + `ProductViewModel.kt`): rellena el `imageLink` VACÍO con

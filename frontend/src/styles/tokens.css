@@ -1,18 +1,18 @@
 /* Motos Punta — design tokens. Ver DESIGN.md (raíz del repo). Un solo sistema.
    TEMA: claro (probando). Para volver al oscuro, ver los valores comentados abajo. */
 :root {
-  /* Color — TEMA GRIS CLARO */
-  --bg: #ECECEF;
-  --surface: #FFFFFF;
-  --surface-2: #E2E2E6;
-  --border: rgba(0, 0, 0, 0.10);
-  --border-strong: rgba(0, 0, 0, 0.20);
-  --text: #17171B;
-  --text-muted: #5B5B63;
-  --text-faint: #9A9AA3;
+  /* Color — TEMA OSCURO */
+  --bg: #0A0A0B;
+  --surface: #141417;
+  --surface-2: #1D1D22;
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #FAFAFA;
+  --text-muted: #9A9AA3;
+  --text-faint: #6A6A73;
   --accent: #E11322;
   --accent-hover: #C10E1C;
-  --accent-bright: #CE1020;
+  --accent-bright: #FF3B47;
   --accent-dim: rgba(225, 19, 34, 0.10);
   --success: #1FA463;
   --danger: #D93A3F;
@@ -38,7 +38,7 @@
   --dur: 0.28s;
 
   /* Elevation */
-  --shadow: 0 10px 30px rgba(20, 20, 40, 0.10);
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   --glow: 0 0 0 1px var(--accent-dim), 0 14px 34px rgba(225, 19, 34, 0.16);
 
   /* --- TEMA OSCURO (para revertir): ---
