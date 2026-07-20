@@ -4,6 +4,7 @@ import Footer from "./components/Footer";
 import WhatsAppFab from "./components/WhatsAppFab";
 import ScrollProgress from "./components/ScrollProgress";
 import Home from "./pages/Home";
+import Motos from "./pages/Motos";
 import Catalogo from "./pages/Catalogo";
 import Producto from "./pages/Producto";
 import Outlet from "./pages/Outlet";
@@ -23,9 +24,13 @@ export default function App() {
       <main id="contenido">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/motos" element={<Motos />} />
+          <Route path="/motos/:tipo" element={<Motos />} />
           <Route path="/catalogo" element={<Catalogo />} />
           <Route path="/catalogo/:categoria" element={<Catalogo />} />
           <Route path="/producto/:id" element={<Producto />} />
+          {/* Alias: los links del feed de Meta/WhatsApp usan /product/{itemGroupId} */}
+          <Route path="/product/:id" element={<Producto />} />
           <Route path="/outlet" element={<Outlet />} />
           <Route path="/financiacion" element={<Financiacion />} />
           <Route path="/contacto" element={<Contacto />} />

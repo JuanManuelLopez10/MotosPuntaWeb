@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Tag, ArrowRight } from "lucide-react";
 import PageTransition from "../components/PageTransition";
+import Loader from "../components/Loader";
 import ProductCard from "../components/ProductCard";
 import { fetchProducts, isOutlet, formatPrice } from "../lib/catalog";
+import { useSeo } from "../lib/seo";
 import "./Outlet.css";
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -12,6 +14,13 @@ const EASE = [0.22, 1, 0.36, 1];
 export default function Outlet() {
   const [products, setProducts] = useState(null);
   const [error, setError] = useState(null);
+
+  useSeo({
+    path: "/outlet",
+    title: "Zona Outlet — ofertas",
+    description:
+      "Zona Outlet de Motos Punta: motos, cascos, indumentaria y accesorios con precios rebajados por tiempo limitado. Aprovechá antes de que se agoten.",
+  });
 
   useEffect(() => {
     let alive = true;
@@ -25,6 +34,8 @@ export default function Outlet() {
   );
 
   return (
+    <>
+    <Loader show={!products && !error} />
     <PageTransition>
       <section className="outlet">
         <div className="outlet__hero">
@@ -67,5 +78,6 @@ export default function Outlet() {
         </div>
       </section>
     </PageTransition>
+    </>
   );
 }

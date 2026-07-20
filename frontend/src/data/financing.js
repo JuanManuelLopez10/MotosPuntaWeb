@@ -101,13 +101,13 @@ export const FINANCING = [
     tagline: "Requisitos mínimos.",
     facts: [
       { label: "Antigüedad", value: "6 meses" },
-      { label: "Edad mínima", value: "25 años" },
+      { label: "Edad mínima", value: "21 años" },
     ],
     requirements: [
       "Al menos 6 meses de antigüedad laboral",
-      "Ser mayor de 25 años",
+      "Ser mayor de 21 años",
     ],
-    criteria: { edadMin: 25, antiguedadMin: 6 },
+    criteria: { edadMin: 21, antiguedadMin: 6 },
   },
 ];
 

@@ -7,13 +7,15 @@
 /* HERO full-bleed */
 .hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; overflow: hidden; }
 .hero__bg { position: absolute; inset: 0; z-index: 0; will-change: transform; }
+/* Imagen y video superpuestos: la imagen es la base (siempre visible) y el video se monta
+   encima sólo en escritorio (Home.jsx). Si el video falla/no está, queda la imagen. */
 .hero__bgMedia {
+  position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover;
   object-position: center;
   animation: kenburns 26s ease-in-out infinite alternate;
 }
-.hero__bgVideo { display: none; }
 @keyframes kenburns {
   from { transform: scale(1) translate(0, 0); }
   to { transform: scale(1.08) translate(-1.5%, -1%); }
@@ -106,10 +108,6 @@
   .hero__scroll { display: none; }
   .feat-grid { grid-template-columns: repeat(2, 1fr); }
   .cat-grid { grid-template-columns: repeat(2, 1fr); }
-}
-@media (orientation: landscape) {
-  .hero__bgImage { display: none; }
-  .hero__bgVideo { display: block; }
 }
 @media (max-width: 480px) {
   .feat-grid { grid-template-columns: repeat(2, 1fr); gap: var(--sp-3); }

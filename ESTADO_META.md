@@ -6,12 +6,47 @@
 
 ## ⚡ ESTADO ACTUAL (15/07/2026) — LEER PRIMERO
 
-**La WEB fue REHECHA de cero esta sesión** (Vite+React, tema oscuro premium, sistema de diseño
+**La WEB fue REHECHA de cero** (sesión 15/07) (Vite+React, tema oscuro premium, sistema de diseño
 Impeccable: Oswald + Hanken Grotesk, acento rojo). Backend Flask/Render + Firestore intacto.
 Todo el frontend está en `frontend/src` (páginas en `pages/`, componentes en `components/`,
 datos en `data/`, helpers en `lib/`, estilos en `styles/`). Se prueba con dev server:
-`cd frontend && npm run dev` (localhost:5173). El screenshot del preview NO anda (pestaña
-"hidden"); se verifica por get_page_text / javascript_tool.
+`cd frontend && npm run dev` (localhost:5173). El screenshot del preview NO anda (se cuelga);
+se verifica por get_page_text / read_page / javascript_tool. TIP: el navegador del preview NO
+alcanza el API de Render (CORS/red) → para ver con datos, levantar un mock local que sirva el
+snapshot en `/api/products` con CORS `*` y arrancar Vite con `VITE_API_BASE_URL=http://localhost:PUERTO`.
+
+**NUEVO (17/07/2026) — Sección MOTOS separada del catálogo (sin commitear aún):**
+- Las **motos ya NO están en el Catálogo**: el catálogo es solo Cascos / Indumentaria / Accesorios
+  (se sacó la pestaña Motos y el filtro Cilindrada; "Todos" excluye motos). Las motos tienen su
+  **propia página `/motos`** y **botón propio en el nav** (separado de "Catálogo").
+- **`pages/Motos.jsx` + `Motos.css` (NUEVOS)**: página premium y compleja. Secciones: **hero
+  spotlight** que rota los flagships (con foto, tipo, cc/HP, precio, "Ver ficha" + thumbnails),
+  **marquee de las 9 marcas** (pills que filtran), **explorador por tipo** (cards con imagen de
+  fondo + count + blurb → `/motos/:tipo`), **browse** con tabs por tipo + buscador + orden + "solo
+  con stock" + chips de marca + "Más filtros" (cilindrada/precio) → grilla de ProductCard con URL
+  compartible, **franja "Por qué comprar acá"** y **CTA financiación**. Animaciones framer-motion
+  (reveals, count-up, parallax, crossfade del spotlight, respeta prefers-reduced-motion).
+- El campo fuerte de las motos es **`type`** (Naked 31, Calle 22, Sport 14, Multiprop. 14, Pollerita
+  12, Scooter 10, Enduro 9, Custom 4 — todos poblados) y **`brand`** (9). La **cilindrada casi no
+  está cargada** (solo ~13 motos) → es filtro secundario, solo aparece si hay datos.
+- Ruta `/motos` y `/motos/:tipo` (slug del tipo). Reencaminados: Home (card Motos→/motos), Producto
+  (breadcrumb + "Ver más" de motos→/motos), Financiación ("Ver motos"→/motos). Nav con "Motos".
+- Helpers nuevos: `typeSlug()` en `lib/catalog.js`; `CATALOG_CATEGORIES`, `MOTO_TYPE_META`,
+  `MOTO_TYPE_ORDER` en `data/site.js`. **Verificado** (build OK, sin errores de consola, filtrado
+  por tipo/marca OK, catálogo sin motos=381 productos, móvil sin overflow). Datos reales: 116 motos.
+- **Loader/preloader con logo** (`components/Loader.jsx` + `Loader.css`, NUEVOS): overlay a pantalla
+  completa (z-index 9999, tapa el header, bloquea el scroll del body) con el logo + anillo girando +
+  barra + "Cargando…", mientras cargan los productos. Enganchado en TODAS las páginas que cargan
+  productos: Motos, Catálogo, Home, Producto, Outlet (`<Loader show={!products && !error}/>` FUERA del
+  `PageTransition` porque este usa transform y rompería el `position:fixed`). En Motos además espera la
+  1ª imagen del hero (tope 3.5s). Aparece a los 150ms (no parpadea en cargas rápidas) y se desvanece al
+  terminar. **GOTCHAS aprendidos:** (1) NO usar `AnimatePresence` para el overlay — en StrictMode la
+  animación de salida no lo desmontaba (quedaba pegado); se hace con estado `mounted`/`leaving` + timeout.
+  (2) La ENTRADA no puede depender de una animación de opacidad: la pestaña del preview está oculta y el
+  navegador PAUSA las animaciones CSS → una `@keyframes` `opacity:0→1` queda congelada en 0 y el overlay
+  se ve transparente. Por eso el `.loader` tiene `opacity:1` de base (siempre visible) y la entrada es
+  solo `transform`; el fade-out es una `transition`. Verificado el ciclo completo (aparece opaco, tapa
+  todo, bloquea scroll, y desaparece al llegar los datos) en Motos y Catálogo.
 
 **HECHO en la web (todo funcionando en local):**
 - **Home** (`pages/Home.jsx`): hero full-bleed con `Wallpaper.mp4` (video en landscape) / `Wallpaper.jpg`
@@ -63,10 +98,79 @@ datos en `data/`, helpers en `lib/`, estilos en `styles/`). Se prueba con dev se
 **ESTADO DE GIT (importante):**
 - **App Kotlin**: los cambios de esta sesión (imageLink + outlet) quedaron **COMMITEADOS localmente y
   pusheados** (repo MotosPunta-StockApp) — ver último commit.
-- **Web frontend**: todo el rebuild quedó **COMMITEADO LOCALMENTE pero NO pusheado** (para no deployar a
+- **Web frontend**: el rebuild del 15/07 quedó **COMMITEADO LOCALMENTE pero NO pusheado** (para no deployar a
   producción/Vercel sin OK de JM). El backend (leads) sí está pusheado. `Wallpaper.mp4` (43MB) y las carpetas
   de tooling `.claude/ .agents/ .codex/` (Impeccable, reinstalable con `npx impeccable install`) están en
   `.gitignore` — el video vive local; para deploy hay que resolverlo aparte.
+- **Sección Motos + Loader + ajustes + SEO + prerender (17/07)**: TODO está en el **working tree SIN
+  COMMITEAR** (JM decide cuándo commitear/pushear). Modificados: App, index.html, package.json, vercel.json,
+  Header.jsx/.css, data/financing.js, data/site.js, lib/catalog.js, Catalogo, Contacto, Financiacion.jsx/.css,
+  Home, Outlet, Producto. Nuevos: `pages/Motos.jsx/.css`, `components/Loader.jsx/.css`, `lib/seo.js`,
+  `scripts/prerender.mjs`, y en `public/`: `robots.txt`, `sitemap.xml`, `site.webmanifest`,
+  `favicon-32/192/512.png`, `apple-touch-icon.png`, `og-cover.jpg`. (Ya se puede commitear sin problema.)
+- **Ajustes finos (17/07):** (1) botón **Outlet** ahora es un **pill rojo con glow pulsante** en el nav de
+  escritorio (`Header.css`, `.hdr__nav .hdr__link--hot`; el móvil sigue en rojo brillante). (2) **Cash**
+  ahora pide **mayor de 21** (no 25) — `data/financing.js` (fact, requisito y `criteria.edadMin`).
+  (3) La **foto del hero de Motos** es **25% más grande** (`.mhero__img { transform: scale(1.25) }`, origen
+  center-bottom; verificado: no recorta arriba ni pisa el caption, sin overflow en desktop/móvil).
+- **Nav reordenado (17/07):** orden **Motos · Catálogo · Financiación · Contacto · WhatsApp · Outlet**.
+  **WhatsApp pasó a ser un link más del nav** (mismo estilo que los demás; se sacó el botón `btn-primary
+  hdr__cta`), y **Outlet es el único distinto** (el pill). En `Header.jsx` el NAV soporta items externos
+  (`{ href, external:true }`) → WhatsApp es un `<a target=_blank>`. Verificado: entra sin overflow hasta
+  ~840px (abajo de 820 pasa a burger); menú móvil con el mismo orden y WhatsApp como link normal.
+- **Checklist de financiación alineado (17/07):** los controles (Sí/No e inputs) se **empujan al fondo de la
+  celda** (`.check__q > .check__num, .check__q > .yn { margin-top:auto }` + `align-items:stretch` en
+  `.check__grid`), así quedan alineados en la fila aunque una pregunta ocupe 2 líneas (era el caso de
+  "¿Tu N° de cédula…?"). Verificado: la fila de las 3 booleanas queda con spread 0.
+
+- **Botón Outlet más grande/cuadrado (17/07):** `.hdr__nav .hdr__link--hot` pasó a `padding:12px 26px`,
+  `border-radius: var(--radius-sm)` (4px), `font-size:1.02rem`, `font-weight:700` (antes era pill 999px chico).
+- **SEO integral (17/07) — NUEVO:**
+  - **`index.html`** reescrito: title, description, canonical, robots, Open Graph completo (site_name, url,
+    locale es_UY, **image=og-cover.jpg 1200×630**, dimensiones, alt), Twitter card, theme-color, links de
+    favicon (32/192/512 + apple-touch) + manifest, y **JSON-LD `AutoDealer`** (nombre, dirección Maldonado,
+    tel +59899673830, sameAs IG).
+  - **Hook `src/lib/seo.js` (`useSeo`)**: setea por página título/description/canonical/OG/Twitter y JSON-LD
+    (upsert de tags, sin dependencias). Llamado en Home, Motos (dinámico por tipo), Catálogo (por tab),
+    Producto (título del producto + **JSON-LD `Product`** con precio USD/stock/marca), Financiación, Outlet,
+    Contacto. Esto lo ve Google (ejecuta JS); para los scrapers de redes (que leen el HTML estático) se agregó
+    el **PRERENDER** (ver más abajo), así que las previews por-producto ya salen bien.
+  - **Favicon con el logo real**: generados desde `public/LOGO.png` con el canvas del navegador (recorte del
+    bbox + centrado sobre blanco) → `favicon-32/192/512.png`, `apple-touch-icon.png` (180). Verificados a ojo.
+  - **`og-cover.jpg`** (1200×630): compuesta en canvas (Wallpaper + velo + glow + logo + "MOTOS 0KM EN
+    MALDONADO"). Verificada a ojo.
+  - **`public/robots.txt`** (+ Sitemap), **`public/sitemap.xml`** (páginas estáticas), **`public/site.webmanifest`**.
+  - **FIX de lógica (importante):** el feed de Meta/WhatsApp linkea a `motospunta.uy/product/{itemGroupId}`
+    pero la ruta era `/producto/{docId}` → esos links caían al Home. Se agregó ruta **alias `/product/:id`**
+    y la ficha ahora **resuelve por id O itemGroupId/idd/slug** (`Producto.jsx`), con canonical al
+    `/producto/{docId}`. Verificado: `/product/CFMotoNK675` abre la ficha real. (El feed en sí sigue igual;
+    el alias lo cubre desde la web.)
+  - **Assets generados** con un endpoint temporal `/_save` en el mock local (scratchpad) + canvas del
+    navegador, porque no hay ImageMagick/sharp en la PC. Para regenerarlos: levantar el mock, cargar la web
+    apuntando al mock y correr el snippet de canvas (ver historial).
+- **PRERENDER de SEO (17/07) — HECHO:** en vez de migrar a SSR/Next (reescritura grande), se prerenderiza el
+  `<head>` por ruta en el build. Los scrapers de redes NO ejecutan JS → sólo leen el `<head>`, así que con esto
+  las previews de WhatsApp/Facebook/Twitter salen correctas por página **incluidos los ~500 productos**. Cómo:
+  - `index.html` tiene markers `<!--seo:start-->/<!--seo:end-->` alrededor del bloque SEO variable (title,
+    description, canonical, OG, twitter). El resto (favicons, manifest, JSON-LD `AutoDealer`, fonts) es fijo.
+  - **`scripts/prerender.mjs`** (Node puro, sin Puppeteer): tras `vite build`, trae los productos del API
+    (`VITE_API_BASE_URL` o el fallback Render; timeout 60s, si falla NO rompe el build) y escribe
+    `dist/<ruta>/index.html` reemplazando el bloque entre markers por el `<head>` de cada ruta: páginas
+    estáticas, `/motos/:tipo`, `/catalogo/:cat`, `/producto/{id}` (con **JSON-LD Product** precio USD/stock),
+    y alias `/product/{itemGroupId}` (canonical → `/producto/{id}`). Última corrida: **698 rutas**.
+  - `package.json`: `"build:seo": "vite build && node scripts/prerender.mjs"` y `"prerender"`. **`vercel.json`**:
+    `buildCommand: "npm run build:seo"` + `outputDirectory: dist` (Vercel sirve el archivo estático prerenderizado
+    y el rewrite a `/index.html` queda de fallback SPA). El `build` normal (`vite build`) NO prerenderiza (rápido
+    para dev); el deploy usa `build:seo`.
+  - El body sigue siendo la SPA (React renderiza en el cliente sobre el `<div id=root>` vacío — no hay SSR del
+    cuerpo, así que no hay hydration mismatch). `useSeo` al montar **quita el JSON-LD estático** del prerender y
+    pone el suyo (sin duplicar). Verificado: `/producto/{id}` y `/product/{itemGroupId}` sirven el head correcto
+    por curl (sin JS) y la ficha hidrata con 1 solo JSON-LD Product.
+  - Limitaciones/pendientes: el precio/stock del `<head>` prerenderizado es del último deploy (la página en vivo
+    sí trae datos frescos por fetch) — para OG está OK. Falta opcional: **sitemap dinámico de productos** (hoy el
+    sitemap tiene sólo las páginas fijas). Para regenerar/probar el prerender local: levantar el mock y
+    `VITE_API_BASE_URL=http://localhost:8899 npm run build:seo`, servir `dist/` (script `serve-dist.mjs` del
+    scratchpad imita el routing de Vercel).
 
 **PRÓXIMOS PASOS / PENDIENTES:**
 1. **Correr el APK nuevo** una vez para que `migrateImageLinks` + los campos de Outlet queden en Firestore.
@@ -77,8 +181,7 @@ datos en `data/`, helpers en `lib/`, estilos en `styles/`). Se prueba con dev se
 4. **Deploy del frontend a producción** (Vercel / motospunta.uy) cuando JM decida → hacer `git push`. Al salir,
    **sumar `https://motospunta.uy` a `ALLOWED_ORIGINS`** (env en Render) para que los formularios anden desde
    ese dominio (hoy están habilitados vercel.app + localhost). Resolver el `Wallpaper.mp4` para el deploy.
-5. **⚠️ CODEX EN PARALELO**: JM edita la web con Codex al mismo tiempo. Riesgo de pisarse. Coordinar (uno por
-   vez, o repartir áreas).
+5. (JM ya NO usa Codex — sin riesgo de pisarse; se puede commitear/pushear libremente.)
 6. Pendientes viejos que siguen: etiquetado de posts en Uruguay (verificar), y la limpieza de datos de abajo
    (parte se hizo: JM borró los 4 AGV Compact; faltan las correcciones de color y las comillas sueltas).
 

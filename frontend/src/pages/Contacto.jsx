@@ -5,6 +5,7 @@ import { Send, MessageCircle, Instagram, MapPin, CheckCircle2, Loader2 } from "l
 import PageTransition from "../components/PageTransition";
 import { SITE, waLink } from "../data/site";
 import { submitLead } from "../lib/leads";
+import { useSeo } from "../lib/seo";
 import "./Contacto.css";
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -15,6 +16,12 @@ export default function Contacto() {
   const [errorMsg, setErrorMsg] = useState("");
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const canSend = form.nombre.trim() && form.contacto.trim();
+
+  useSeo({
+    path: "/contacto",
+    title: "Contacto",
+    description: `Contactá a Motos Punta en Maldonado. WhatsApp ${SITE.phoneDisplay}, ${SITE.address}. Escribinos y te respondemos a la brevedad.`,
+  });
 
   const submit = async (e) => {
     e.preventDefault();

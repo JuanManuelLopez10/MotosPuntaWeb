@@ -1,14 +1,21 @@
 import { useEffect, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import { SITE, waLink } from "../data/site";
+import { waLink } from "../data/site";
 import "./Header.css";
 
+const WA_HREF = waLink("Hola Motos Punta 👋 Quiero hacer una consulta.");
+
+// WhatsApp es un link más del nav (mismo estilo que los demás); Outlet es el único
+// distinto (pill rojo, `hot`). Orden pedido: Motos · Catálogo · Financiación · Contacto ·
+// WhatsApp · Outlet.
 const NAV = [
+  { to: "/motos", label: "Motos" },
   { to: "/catalogo", label: "Catálogo" },
-  { to: "/outlet", label: "Outlet", hot: true },
   { to: "/financiacion", label: "Financiación" },
   { to: "/contacto", label: "Contacto" },
+  { href: WA_HREF, label: "WhatsApp", external: true },
+  { to: "/outlet", label: "Outlet", hot: true },
 ];
 
 export default function Header() {
@@ -35,21 +42,18 @@ export default function Header() {
         </Link>
 
         <nav className="hdr__nav" aria-label="Principal">
-          {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} className={`hdr__link ${n.hot ? "hdr__link--hot" : ""}`}>
-              {n.label}
-            </NavLink>
-          ))}
+          {NAV.map((n) =>
+            n.external ? (
+              <a key={n.label} className="hdr__link" href={n.href} target="_blank" rel="noreferrer">
+                {n.label}
+              </a>
+            ) : (
+              <NavLink key={n.label} to={n.to} className={`hdr__link ${n.hot ? "hdr__link--hot" : ""}`}>
+                {n.label}
+              </NavLink>
+            ),
+          )}
         </nav>
-
-        <a
-          className="btn btn-primary hdr__cta"
-          href={waLink("Hola Motos Punta 👋 Quiero hacer una consulta.")}
-          target="_blank"
-          rel="noreferrer"
-        >
-          WhatsApp
-        </a>
 
         <button className="hdr__burger" aria-label="Abrir menú" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
           {open ? <X size={26} /> : <Menu size={26} />}
@@ -59,14 +63,17 @@ export default function Header() {
       {open && (
         <div className="hdr__mobile" onClick={() => setOpen(false)}>
           <nav className="hdr__mobileNav" aria-label="Menú móvil">
-            {NAV.map((n) => (
-              <NavLink key={n.to} to={n.to} className={`hdr__mobileLink ${n.hot ? "hdr__link--hot" : ""}`}>
-                {n.label}
-              </NavLink>
-            ))}
-            <a className="btn btn-primary" href={waLink("Hola Motos Punta 👋 Quiero hacer una consulta.")} target="_blank" rel="noreferrer">
-              Consultar por WhatsApp
-            </a>
+            {NAV.map((n) =>
+              n.external ? (
+                <a key={n.label} className="hdr__mobileLink" href={n.href} target="_blank" rel="noreferrer">
+                  {n.label}
+                </a>
+              ) : (
+                <NavLink key={n.label} to={n.to} className={`hdr__mobileLink ${n.hot ? "hdr__link--hot" : ""}`}>
+                  {n.label}
+                </NavLink>
+              ),
+            )}
           </nav>
         </div>
       )}

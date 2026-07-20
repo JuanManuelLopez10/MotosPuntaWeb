@@ -83,6 +83,16 @@ export function cc(p) {
   return String(p.cilindrada || "").replace(/[^\d]/g, "");
 }
 
+// Slug url-safe de un tipo de moto ("Multiprop." -> "multiprop", "Naked" -> "naked").
+// Sirve para la ruta /motos/:tipo y para resolver el param de vuelta al tipo real.
+export function typeSlug(t) {
+  return String(t || "")
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
 // --- Talles ---
 const CLOTHING = [["xs", "XS"], ["s", "S"], ["m", "M"], ["l", "L"], ["xl", "XL"], ["xxl", "XXL"], ["3xl", "3XL"]];
 const FOOTWEAR = Array.from({ length: 14 }, (_, i) => [String(35 + i), String(35 + i)]); // 35..48

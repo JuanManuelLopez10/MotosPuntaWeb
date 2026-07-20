@@ -113,9 +113,12 @@
 .check__icon { color: var(--accent-bright); }
 .check__title { font-size: 1.3rem; }
 .check__sub { color: var(--text-muted); font-size: 0.9rem; margin: var(--sp-1) 0 var(--sp-5); }
-.check__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-4); }
+.check__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--sp-4); align-items: stretch; }
 .check__q { display: flex; flex-direction: column; gap: var(--sp-2); }
-.check__q--bool { }
+/* Empuja el control (Sí/No o input) al fondo de la celda: como las celdas de una misma
+   fila tienen igual alto, los controles quedan ALINEADOS aunque la pregunta ocupe 1 o 2
+   líneas. */
+.check__q > .check__num, .check__q > .yn { margin-top: auto; }
 .check__label { font-size: 0.9rem; color: var(--text); }
 .check__num { display: flex; align-items: center; gap: var(--sp-2); }
 .check__num input {

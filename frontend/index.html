@@ -2,17 +2,70 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Favicons (logo de Motos Punta) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#0A0A0B" />
-    <meta name="description" content="Motos Punta — concesionaria de motos en Maldonado, Uruguay. Motos 0 km, cascos, indumentaria y accesorios. Simulá tu cuota y consultá por WhatsApp." />
+    <meta name="author" content="Motos Punta" />
+
+    <!-- SEO por página: el script de prerender (scripts/prerender.mjs) reemplaza TODO lo que
+         hay entre estos markers por el <head> específico de cada ruta en el build. NO quitar
+         los markers. El default de acá es la Home / el sitio. -->
+    <!--seo:start-->
+    <title>Motos Punta — Concesionaria de motos en Maldonado</title>
+    <meta name="description" content="Motos Punta — concesionaria de motos en Maldonado, Uruguay. Motos 0 km, cascos, indumentaria y accesorios. Financiación clara y atención directa por WhatsApp." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://motospunta.uy/" />
+    <meta property="og:site_name" content="Motos Punta" />
     <meta property="og:title" content="Motos Punta — Concesionaria en Maldonado" />
-    <meta property="og:description" content="Motos 0 km, cascos e indumentaria. Financiación clara y atención directa por WhatsApp." />
+    <meta property="og:description" content="Motos 0 km, cascos, indumentaria y accesorios. Financiación clara y atención directa por WhatsApp." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://motospunta.uy/" />
+    <meta property="og:locale" content="es_UY" />
+    <meta property="og:image" content="https://motospunta.uy/og-cover.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Motos Punta — concesionaria de motos en Maldonado" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Motos Punta — Concesionaria en Maldonado" />
+    <meta name="twitter:description" content="Motos 0 km, cascos, indumentaria y accesorios. Financiación y atención por WhatsApp." />
+    <meta name="twitter:image" content="https://motospunta.uy/og-cover.jpg" />
+    <!--seo:end-->
+
+    <!-- Datos del negocio (structured data) — presente en todas las páginas -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "AutoDealer",
+      "@id": "https://motospunta.uy/#business",
+      "name": "Motos Punta",
+      "description": "Concesionaria de motos en Maldonado, Uruguay. Motos 0 km, cascos, indumentaria y accesorios.",
+      "url": "https://motospunta.uy",
+      "logo": "https://motospunta.uy/favicon-512.png",
+      "image": "https://motospunta.uy/og-cover.jpg",
+      "telephone": "+59899673830",
+      "priceRange": "$$",
+      "currenciesAccepted": "USD",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Arturo Santana esq. 19 de Abril",
+        "addressLocality": "Maldonado",
+        "addressRegion": "Maldonado",
+        "addressCountry": "UY"
+      },
+      "areaServed": { "@type": "AdministrativeArea", "name": "Maldonado, Uruguay" },
+      "sameAs": ["https://instagram.com/motospunta"]
+    }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <title>Motos Punta — Concesionaria de motos en Maldonado</title>
   </head>
   <body>
     <div id="root"></div>

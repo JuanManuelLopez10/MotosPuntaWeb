@@ -3,10 +3,12 @@ import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Calculator, ChevronRight } from "lucide-react";
 import PageTransition from "../components/PageTransition";
+import Loader from "../components/Loader";
 import ProductCard from "../components/ProductCard";
 import Marquee from "../components/Marquee";
 import { CATEGORIES, waLink, HERO_MEDIA } from "../data/site";
 import { fetchProducts, formatPrice, inStock } from "../lib/catalog";
+import { useSeo } from "../lib/seo";
 import "./Home.css";
 
 const logoMods = import.meta.glob("../assets/logos/*.png", { eager: true, import: "default" });
@@ -42,6 +44,24 @@ const CATEGORY_BLURB = {
 export default function Home() {
   const [products, setProducts] = useState(null);
   const heroRef = useRef(null);
+  // El video del hero sólo se monta en escritorio (para no bajar 43MB en mobile) y se
+  // descarta si falla (queda la imagen de fondo).
+  const [useHeroVideo, setUseHeroVideo] = useState(false);
+  const [heroVideoFailed, setHeroVideoFailed] = useState(false);
+
+  useSeo({
+    path: "/",
+    description:
+      "Concesionaria de motos en Maldonado, Uruguay. Motos 0 km, cascos, indumentaria y accesorios. Financiación clara y atención directa por WhatsApp.",
+  });
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px) and (orientation: landscape)");
+    const on = () => setUseHeroVideo(mq.matches);
+    on();
+    mq.addEventListener?.("change", on);
+    return () => mq.removeEventListener?.("change", on);
+  }, []);
 
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const bgScale = useTransform(scrollYProgress, [0, 1], [1.1, 1.28]);
@@ -77,12 +97,24 @@ export default function Home() {
   }, [products]);
 
   return (
+    <>
+    <Loader show={!products} />
     <PageTransition>
       {/* HERO full-bleed */}
       <section className="hero" ref={heroRef}>
         <motion.div className="hero__bg" style={{ scale: bgScale }} aria-hidden="true">
           <img className="hero__bgMedia hero__bgImage" src={HERO_MEDIA.src} alt="" />
-          <video className="hero__bgMedia hero__bgVideo" src="/Wallpaper.mp4" autoPlay muted loop playsInline />
+          {HERO_MEDIA.video && useHeroVideo && !heroVideoFailed && (
+            <video
+              className="hero__bgMedia hero__bgVideo"
+              src={HERO_MEDIA.video}
+              autoPlay
+              muted
+              loop
+              playsInline
+              onError={() => setHeroVideoFailed(true)}
+            />
+          )}
         </motion.div>
         <div className="hero__scrim" aria-hidden="true" />
 
@@ -128,7 +160,7 @@ export default function Home() {
             const image = categoryImages[c.key];
             return (
               <motion.div key={c.key} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.5, delay: i * 0.06, ease: EASE }}>
-                <Link to={`/catalogo/${c.key}`} className="cat-card" style={{ "--category-image": image ? `url("${image}")` : "none" }}>
+                <Link to={c.key === "motos" ? "/motos" : `/catalogo/${c.key}`} className="cat-card" style={{ "--category-image": image ? `url("${image}")` : "none" }}>
                   <span className="cat-card__label">{c.label}</span>
                   <span className="cat-card__blurb">{CATEGORY_BLURB[c.key]}</span>
                   <ArrowRight className="cat-card__arrow" size={20} />
@@ -181,6 +213,7 @@ export default function Home() {
         </motion.div>
       </section>
     </PageTransition>
+    </>
   );
 }
 

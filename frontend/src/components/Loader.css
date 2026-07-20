@@ -1,0 +1,64 @@
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(60% 50% at 50% 42%, rgba(225, 19, 34, 0.10), transparent 70%),
+    var(--bg);
+  /* Base VISIBLE (opacity 1) a propósito: no dependemos de una animación de opacidad para
+     mostrarlo. Si el navegador pausa animaciones (pestaña oculta) o las reduce, el overlay
+     igual se ve. La entrada es solo transform; el fade-out es una transición. */
+  opacity: 1;
+}
+.loader.is-leaving { opacity: 0; transition: opacity 0.4s var(--ease); }
+/* Entrada sutil solo con transform (nunca deja el contenido invisible si se pausa). */
+.loader__inner { display: flex; flex-direction: column; align-items: center; gap: var(--sp-5); animation: loaderIn 0.5s var(--ease); }
+@keyframes loaderIn { from { transform: translateY(10px) scale(0.98); } to { transform: none; } }
+
+.loader__logoWrap { position: relative; width: 164px; height: 164px; display: grid; place-items: center; }
+/* Glow suave detrás para separar el escudo (negro) del fondo oscuro. */
+.loader__logoWrap::before {
+  content: ""; position: absolute; inset: 12%; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.09), transparent 68%);
+}
+.loader__ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.08);
+  border-top-color: var(--accent);
+  border-right-color: var(--accent);
+  animation: loaderSpin 0.9s linear infinite;
+}
+.loader__logo {
+  position: relative;
+  height: 90px; width: auto;
+  filter: drop-shadow(0 8px 22px rgba(0, 0, 0, 0.55));
+  animation: loaderPulse 1.6s var(--ease) infinite;
+}
+
+.loader__label {
+  display: inline-flex;
+  font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.22em;
+  font-size: 0.85rem; color: var(--text-muted);
+}
+.loader__dots::after { content: ""; animation: loaderDots 1.4s steps(1) infinite; }
+
+.loader__bar {
+  position: relative; width: 172px; height: 3px; border-radius: 2px;
+  background: var(--surface-2); overflow: hidden;
+}
+.loader__bar::after {
+  content: ""; position: absolute; top: 0; left: 0; height: 100%; width: 42%; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: loaderBar 1.15s var(--ease) infinite;
+}
+
+@keyframes loaderSpin { to { transform: rotate(360deg); } }
+@keyframes loaderPulse { 0%, 100% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.05); opacity: 1; } }
+@keyframes loaderDots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+@keyframes loaderBar { 0% { transform: translateX(-120%); } 100% { transform: translateX(360%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .loader__bar::after { width: 100%; animation: none; }
+}

@@ -6,5 +6,5 @@ backend/brands.json
 .agents/
 .codex/
 
-# Video del hero (43MB) — vive local; para el deploy resolver aparte
+# Video del hero (43MB) — se sirve desde R2 (media/Wallpaper.mp4), no del repo
 frontend/public/Wallpaper.mp4

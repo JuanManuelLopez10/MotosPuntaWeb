@@ -7,6 +7,7 @@ import { FINANCING, ELIGIBILITY_QUESTIONS, evaluate } from "../data/financing";
 import { waLink } from "../data/site";
 import { fetchProducts, formatPrice, productFullName } from "../lib/catalog";
 import { submitLead } from "../lib/leads";
+import { useSeo } from "../lib/seo";
 import "./Financiacion.css";
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -27,6 +28,13 @@ export default function Financiacion() {
   const [answers, setAnswers] = useState({});
   const [onlyEligible, setOnlyEligible] = useState(false);
   const [requestFor, setRequestFor] = useState(null); // entidad para la solicitud (modal)
+
+  useSeo({
+    path: "/financiacion",
+    title: "Financiación de motos",
+    description:
+      "Financiá tu moto 0km en Maldonado. Trabajamos con BBVA, Santander, Creditel, Créditos Directos, Anda y más. Completá el checklist y mirá a qué opciones accedés.",
+  });
 
   useEffect(() => {
     if (!motoId) return;
@@ -184,7 +192,7 @@ export default function Financiacion() {
             </div>
             <div className="fin__ctaActions">
               <a className="btn btn-primary" href={waGeneral} target="_blank" rel="noreferrer"><MessageCircle size={18} /> Consultar por WhatsApp</a>
-              <Link to="/catalogo/motos" className="btn btn-secondary">Ver motos <ArrowRight size={18} /></Link>
+              <Link to="/motos" className="btn btn-secondary">Ver motos <ArrowRight size={18} /></Link>
             </div>
           </motion.div>
         </div>

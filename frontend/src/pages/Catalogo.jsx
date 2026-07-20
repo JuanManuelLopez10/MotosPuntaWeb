@@ -3,12 +3,16 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import PageTransition from "../components/PageTransition";
+import Loader from "../components/Loader";
 import ProductCard from "../components/ProductCard";
-import { fetchProducts, inStock, formatPrice, priceValue, cc, availableSizes, SIZE_ORDER } from "../lib/catalog";
-import { CATEGORIES } from "../data/site";
+import { fetchProducts, inStock, formatPrice, priceValue, availableSizes, SIZE_ORDER } from "../lib/catalog";
+import { CATALOG_CATEGORIES } from "../data/site";
+import { useSeo } from "../lib/seo";
 import "./Catalogo.css";
 
-const TABS = [{ key: "todos", label: "Todos" }, ...CATEGORIES];
+// Las motos NO van en el catálogo: tienen su propia página (/motos). Acá solo cascos,
+// indumentaria y accesorios.
+const TABS = [{ key: "todos", label: "Todos" }, ...CATALOG_CATEGORIES];
 const PAGE = 48;
 const SORTS = [
   { key: "relevance", label: "Relevancia" },
@@ -62,13 +66,20 @@ function ChipGroup({ options, selected, onToggle, unit = "", swatch = false }) {
 }
 
 const sortStr = (arr) => [...arr].sort((a, b) => a.localeCompare(b, "es"));
-const sortNum = (arr) => [...arr].sort((a, b) => Number(a) - Number(b));
 
 export default function Catalogo() {
   const { categoria } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const active = TABS.some((t) => t.key === categoria) ? categoria : "todos";
+  const activeLabel = TABS.find((t) => t.key === active)?.label || "Catálogo";
+
+  useSeo({
+    path: active === "todos" ? "/catalogo" : `/catalogo/${active}`,
+    title: active === "todos" ? "Catálogo de cascos, indumentaria y accesorios" : `${activeLabel} para moto`,
+    description:
+      "Cascos, indumentaria y accesorios para tu moto en Motos Punta, Maldonado. AGV, LS2, MT y más marcas. Consultá stock y precios por WhatsApp.",
+  });
 
   const [products, setProducts] = useState(null);
   const [error, setError] = useState(null);
@@ -78,7 +89,6 @@ export default function Catalogo() {
   // Estado de filtros: se inicializa desde la URL (para links compartibles).
   const [query, setQuery] = useState(() => searchParams.get("q") || "");
   const [types, setTypes] = useState(() => searchParams.getAll("tipo"));
-  const [cilindradas, setCilindradas] = useState(() => searchParams.getAll("cc"));
   const [colors, setColors] = useState(() => searchParams.getAll("color"));
   const [sizes, setSizes] = useState(() => searchParams.getAll("talle"));
   const [brands, setBrands] = useState(() => searchParams.getAll("marca"));
@@ -102,7 +112,6 @@ export default function Catalogo() {
     const p = new URLSearchParams();
     if (query.trim()) p.set("q", query.trim());
     types.forEach((v) => p.append("tipo", v));
-    cilindradas.forEach((v) => p.append("cc", v));
     colors.forEach((v) => p.append("color", v));
     sizes.forEach((v) => p.append("talle", v));
     brands.forEach((v) => p.append("marca", v));
@@ -112,13 +121,14 @@ export default function Catalogo() {
     if (sort !== "relevance") p.set("orden", sort);
     if (p.toString() !== searchParams.toString()) setSearchParams(p, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, types, cilindradas, colors, sizes, brands, priceMin, priceMax, stockOnly, sort]);
+  }, [query, types, colors, sizes, brands, priceMin, priceMax, stockOnly, sort]);
 
-  useEffect(() => { setVisible(PAGE); }, [active, query, types, cilindradas, colors, sizes, brands, priceMin, priceMax, stockOnly, sort]);
+  useEffect(() => { setVisible(PAGE); }, [active, query, types, colors, sizes, brands, priceMin, priceMax, stockOnly, sort]);
 
   const inCategory = useMemo(() => {
     if (!products) return [];
     return products
+      .filter((p) => (p.productType || "").toLowerCase() !== "motos")
       .filter((p) => active === "todos" || (p.productType || "").toLowerCase() === active)
       .filter((p) => formatPrice(p.price));
   }, [products, active]);
@@ -127,7 +137,7 @@ export default function Catalogo() {
   // filtro ofrece solo los valores que quedan disponibles según los OTROS filtros
   // activos (por eso, al elegir cascos, "Naked" desaparece de Tipo). Los valores ya
   // elegidos se mantienen visibles para poder desmarcarlos.
-  const { filtered, typeOptions, cilindradaOptions, sizeOptions, colorOptions, brandOptions } = useMemo(() => {
+  const { filtered, typeOptions, sizeOptions, colorOptions, brandOptions } = useMemo(() => {
     const q = query.trim().toLowerCase();
     const min = priceMin ? Number(priceMin) : null;
     const max = priceMax ? Number(priceMax) : null;
@@ -135,7 +145,6 @@ export default function Catalogo() {
     const match = (p, skip) => {
       if (q && !`${p.title || ""} ${p.brand || ""} ${p.color || ""} ${p.model || ""} ${p.pattern || ""}`.toLowerCase().includes(q)) return false;
       if (skip !== "type" && types.length && !types.includes((p.type || "").trim())) return false;
-      if (skip !== "cc" && cilindradas.length && !cilindradas.includes(cc(p))) return false;
       if (skip !== "color" && colors.length && !colors.includes((p.color || "").trim())) return false;
       if (skip !== "size" && sizes.length && !availableSizes(p).some((s) => sizes.includes(s))) return false;
       if (skip !== "brand" && brands.length && !brands.includes((p.brand || "").trim())) return false;
@@ -155,8 +164,7 @@ export default function Catalogo() {
     const typeSet = optSet("type", (p) => (p.type || "").trim(), types);
     const colorSet = optSet("color", (p) => (p.color || "").trim(), colors);
     const brandSet = optSet("brand", (p) => (p.brand || "").trim(), brands);
-    const ccSet = active === "motos" ? optSet("cc", (p) => cc(p), cilindradas) : new Set();
-    const sizeSet = active === "motos" ? new Set() : (() => {
+    const sizeSet = (() => {
       const s = new Set();
       inCategory.filter((p) => match(p, "size")).forEach((p) => availableSizes(p).forEach((x) => s.add(x)));
       sizes.forEach((v) => s.add(v)); // mantener lo ya elegido visible
@@ -174,15 +182,14 @@ export default function Catalogo() {
       typeOptions: sortStr([...typeSet]),
       colorOptions: sortStr([...colorSet]),
       brandOptions: sortStr([...brandSet]),
-      cilindradaOptions: sortNum([...ccSet]),
       sizeOptions: SIZE_ORDER.filter((s) => sizeSet.has(s)),
     };
-  }, [inCategory, active, query, types, cilindradas, colors, sizes, brands, priceMin, priceMax, stockOnly, sort]);
+  }, [inCategory, active, query, types, colors, sizes, brands, priceMin, priceMax, stockOnly, sort]);
 
   const shown = filtered.slice(0, visible);
   const toggle = (setter) => (val) => setter((cur) => (cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val]));
   const clearFilters = () => {
-    setQuery(""); setTypes([]); setCilindradas([]); setColors([]); setSizes([]); setBrands([]);
+    setQuery(""); setTypes([]); setColors([]); setSizes([]); setBrands([]);
     setPriceMin(""); setPriceMax(""); setStockOnly(false); setSort("relevance");
   };
   // Cambiar de categoría (tab) limpia los filtros y navega. Un link compartido con
@@ -190,10 +197,12 @@ export default function Catalogo() {
   const goTab = (key) => { clearFilters(); navigate(key === "todos" ? "/catalogo" : `/catalogo/${key}`); };
 
   const activeFilterCount =
-    types.length + cilindradas.length + colors.length + sizes.length + brands.length +
+    types.length + colors.length + sizes.length + brands.length +
     (priceMin ? 1 : 0) + (priceMax ? 1 : 0) + (stockOnly ? 1 : 0) + (query.trim() ? 1 : 0);
 
   return (
+    <>
+    <Loader show={!products && !error} />
     <PageTransition>
       <section className="cat">
         <div className="container">
@@ -237,12 +246,6 @@ export default function Catalogo() {
               {typeOptions.length > 1 && (
                 <FilterSection title="Tipo" count={types.length}>
                   <ChipGroup options={typeOptions} selected={types} onToggle={toggle(setTypes)} />
-                </FilterSection>
-              )}
-
-              {cilindradaOptions.length > 0 && (
-                <FilterSection title="Cilindrada" count={cilindradas.length}>
-                  <ChipGroup options={cilindradaOptions} selected={cilindradas} onToggle={toggle(setCilindradas)} unit="cc" />
                 </FilterSection>
               )}
 
@@ -318,5 +321,6 @@ export default function Catalogo() {
 
       {showFilters && <div className="cat__scrim" onClick={() => setShowFilters(false)} />}
     </PageTransition>
+    </>
   );
 }

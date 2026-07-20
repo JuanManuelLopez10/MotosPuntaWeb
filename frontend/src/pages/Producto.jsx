@@ -6,15 +6,60 @@ import {
   Check, Gauge, Zap, ShieldCheck, ArrowDownUp, Waves, Navigation, Cog, Fuel, Wrench,
 } from "lucide-react";
 import PageTransition from "../components/PageTransition";
+import Loader from "../components/Loader";
 import ProductCard from "../components/ProductCard";
 import { waLink, waProductMessage, waBuyMessage, waReserveMessage } from "../data/site";
 import {
-  fetchProducts, productImage, formatPrice, productFullName, inStock, isMoto,
+  fetchProducts, productImage, formatPrice, priceValue, productFullName, inStock, isMoto,
   isOutlet, formatPreviousPrice, discountPct, availableSizes, PRODUCT_PLACEHOLDER,
 } from "../lib/catalog";
+import { useSeo, SITE_URL } from "../lib/seo";
 import "./Producto.css";
 
 const EASE = [0.22, 1, 0.36, 1];
+
+// Descripción para SEO: la del producto si sirve, o una generada con marca/precio/categoría.
+function seoDescription(p) {
+  const own = (p.description || "").trim();
+  if (own && own !== (p.title || "").trim()) return own.slice(0, 300);
+  const price = formatPrice(p.price);
+  const brand = p.brand && !(p.title || "").includes(p.brand) ? ` ${p.brand}` : "";
+  const base = `${p.title}${brand} en Motos Punta, Maldonado.`;
+  const extra = isMoto(p) ? " Moto 0km con financiación disponible." : " Consultá stock y precio por WhatsApp.";
+  return `${base}${price ? ` Precio: ${price}.` : ""}${extra}`;
+}
+
+// URL absoluta de la imagen (para og:image / JSON-LD).
+function absImage(p) {
+  const img = productImage(p);
+  return img.startsWith("http") ? img : `${SITE_URL}${img}`;
+}
+
+// JSON-LD Product (schema.org). Incluye `offers` sólo si hay precio.
+function productJsonLd(p) {
+  const price = priceValue(p.price);
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: productFullName(p) || p.title,
+    image: [absImage(p)],
+    description: seoDescription(p),
+    sku: p.id,
+    category: (p.productType || "").toLowerCase() || undefined,
+  };
+  if (p.brand) jsonLd.brand = { "@type": "Brand", name: p.brand };
+  if (price) {
+    jsonLd.offers = {
+      "@type": "Offer",
+      url: `${SITE_URL}/producto/${p.id}`,
+      priceCurrency: "USD",
+      price,
+      availability: inStock(p) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      itemCondition: isMoto(p) ? "https://schema.org/NewCondition" : "https://schema.org/NewCondition",
+    };
+  }
+  return jsonLd;
+}
 
 // Stats destacados del hero (los 4 números que más venden una moto).
 const HERO_STATS = [
@@ -90,13 +135,35 @@ export default function Producto() {
     return () => { alive = false; };
   }, []);
 
-  const product = useMemo(() => (products || []).find((p) => p.id === id) || null, [products, id]);
+  // Busca por id de documento y, si no, por itemGroupId/idd/slug (así resuelven los
+  // links del feed de Meta/WhatsApp, que usan /product/{itemGroupId}).
+  const product = useMemo(() => {
+    const list = products || [];
+    return (
+      list.find((p) => p.id === id) ||
+      list.find((p) => p.itemGroupId === id || p.idd === id || p.slug === id) ||
+      null
+    );
+  }, [products, id]);
   const related = useMemo(() => {
     if (!products || !product) return [];
     return products
       .filter((p) => p.id !== product.id && (p.productType || "").toLowerCase() === (product.productType || "").toLowerCase() && formatPrice(p.price))
       .slice(0, 4);
   }, [products, product]);
+
+  useSeo(
+    product
+      ? {
+          path: `/producto/${product.id}`,
+          title: productFullName(product) || product.title,
+          description: seoDescription(product),
+          image: absImage(product),
+          type: "product",
+          jsonLd: productJsonLd(product),
+        }
+      : { title: "Producto", description: "Ficha de producto de Motos Punta, Maldonado." },
+  );
 
   useEffect(() => { window.scrollTo(0, 0); }, [id]);
 
@@ -112,7 +179,7 @@ export default function Producto() {
   }, [product]);
 
   if (error) return <PageTransition><section className="pd"><div className="container"><p className="cat__msg">No pudimos cargar el producto. <Link to="/catalogo">Volver al catálogo</Link>.</p></div></section></PageTransition>;
-  if (!products) return <PageTransition><section className="pd"><div className="container"><div className="pd__hero pd__hero--skel"><div className="pd__media pskeleton" /><div className="pskeleton" style={{ height: 320, borderRadius: "var(--radius-lg)" }} /></div></div></section></PageTransition>;
+  if (!products) return <><Loader show /><PageTransition><section className="pd"><div className="container"><div className="pd__hero pd__hero--skel"><div className="pd__media pskeleton" /><div className="pskeleton" style={{ height: 320, borderRadius: "var(--radius-lg)" }} /></div></div></section></PageTransition></>;
   if (!product) return <PageTransition><section className="pd"><div className="container"><p className="cat__msg">Producto no encontrado. <Link to="/catalogo">Volver al catálogo</Link>.</p></div></section></PageTransition>;
 
   const moto = isMoto(product);
@@ -152,11 +219,18 @@ export default function Producto() {
     <PageTransition>
       <section className="pd">
         <div className="container">
-          {/* Breadcrumbs */}
+          {/* Breadcrumbs (las motos cuelgan de /motos; el resto, del catálogo) */}
           <nav className="pd__crumbs" aria-label="Ruta">
             <Link to="/">Inicio</Link><ChevronRight size={14} />
-            <Link to="/catalogo">Catálogo</Link><ChevronRight size={14} />
-            <Link to={`/catalogo/${categoria}`} className="pd__crumbCat">{categoria || "productos"}</Link><ChevronRight size={14} />
+            {moto ? (
+              <Link to="/motos" className="pd__crumbCat">Motos</Link>
+            ) : (
+              <>
+                <Link to="/catalogo">Catálogo</Link><ChevronRight size={14} />
+                <Link to={`/catalogo/${categoria}`} className="pd__crumbCat">{categoria || "productos"}</Link>
+              </>
+            )}
+            <ChevronRight size={14} />
             <span aria-current="page">{product.title}</span>
           </nav>
         </div>
@@ -289,7 +363,7 @@ export default function Producto() {
           {/* Relacionados */}
           {related.length > 0 && (
             <div className="pd__section">
-              <div className="sec-head"><Reveal><h2 className="sec-head__title">También te puede interesar</h2></Reveal><Link to={`/catalogo/${categoria}`} className="sec-head__link">Ver más <ChevronRight size={16} /></Link></div>
+              <div className="sec-head"><Reveal><h2 className="sec-head__title">También te puede interesar</h2></Reveal><Link to={moto ? "/motos" : `/catalogo/${categoria}`} className="sec-head__link">Ver más <ChevronRight size={16} /></Link></div>
               <div className="pd__related">{related.map((p) => <ProductCard key={p.id} product={p} />)}</div>
             </div>
           )}
