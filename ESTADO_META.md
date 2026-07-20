@@ -4,7 +4,30 @@
 > Proyecto SEPARADO del publicador de Instagram (ese tiene su propio ESTADO en
 > `C:\Users\26lop\OneDrive\Escritorio\Instagram\_automation\ESTADO.md`).
 
-## ⚡ ESTADO ACTUAL (15/07/2026) — LEER PRIMERO
+## 🚀 DEPLOY (17/07/2026) — LEER PRIMERO
+**Todo el trabajo (rebuild + Motos + loader + SEO + prerender + hero R2) está COMMITEADO y PUSHEADO a
+`main` (commit `6943f96`).** El sitio nuevo está **LIVE y funcionando** en Vercel: `motos-punta-web.vercel.app`
+(verificado: og-cover 99KB, prerender de productos con precio/stock reales de Render, robots/sitemap OK). El
+video del hero se sirve desde **R2** (`media/Wallpaper.mp4`, subido con el tooling del publicador).
+
+**⚠️ FALTA (acción de JM en el dashboard, no lo puedo hacer yo):**
+1. **El dominio `motospunta.uy` / `www.motospunta.uy` sigue en OTRO proyecto de Vercel (el viejo)** → todavía
+   muestra el sitio anterior. Hay **3 proyectos** conectados al repo (`motos-punta-web`, `-1xmx`, `-jsjo`), los
+   3 con el build nuevo; el dominio NO está en ninguno de esos. **Acción:** en Vercel, proyecto `motos-punta-web`
+   → Settings → Domains → **agregar `motospunta.uy` y `www.motospunta.uy`** (Vercel dirá que están en otro
+   proyecto y ofrecerá moverlos). Elegir un primario. Después, **borrar los proyectos duplicados** (`-1xmx`, `-jsjo`)
+   y el viejo para no confundir.
+2. **www vs no-www:** hoy `motospunta.uy` redirige (308) a `www.motospunta.uy`. El código (canonical/OG/sitemap)
+   usa **no-www** (`https://motospunta.uy`). Recomendado: setear **no-www como primario** en Vercel (coincide con
+   el código y con lo que pidió JM). Si se prefiere www, hay que cambiar `SITE_URL` en `src/lib/seo.js` y
+   `scripts/prerender.mjs` (+ index/sitemap/robots) a `https://www.motospunta.uy` y redeployar.
+3. **Render `ALLOWED_ORIGINS`:** sumar `https://motospunta.uy` (y/o `https://www.motospunta.uy`) para que los
+   formularios (contacto/financiación → `POST /api/leads`) anden desde el dominio final.
+4. **Vercel build:** confirmar en `motos-punta-web` que Root Directory = `frontend` y que el Build Command NO
+   esté forzado en el dashboard (para que use `vercel.json` → `build:seo` y corra el prerender).
+5. Opcional SEO: enviar el `sitemap.xml` en Google Search Console + armar Google Business Profile.
+
+## ⚡ ESTADO ACTUAL (15/07/2026)
 
 **La WEB fue REHECHA de cero** (sesión 15/07) (Vite+React, tema oscuro premium, sistema de diseño
 Impeccable: Oswald + Hanken Grotesk, acento rojo). Backend Flask/Render + Firestore intacto.

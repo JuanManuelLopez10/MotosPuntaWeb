@@ -27,7 +27,7 @@
    no se corra debajo. */
 .hdr__logo {
   position: relative;
-  width: 116px;
+  width: 174px;
   height: var(--header-h);
   margin-right: auto;
   flex-shrink: 0;
@@ -36,9 +36,16 @@
   position: absolute;
   left: 0;
   top: 4px;
-  height: 104px;   /* ~50% más grande que antes; cuelga por debajo del header */
+  height: 156px;   /* base (vertical/portrait) */
   width: auto;
   filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
+}
+/* En horizontal (landscape → escritorio) el logo va +50% más grande. Se sube (top
+   negativo) para que el escudo no cuelgue tanto y no pise los títulos de las páginas;
+   el ~24% superior del PNG es transparente, así que recortarlo arriba no se nota. */
+@media (orientation: landscape) {
+  .hdr__logo { width: 261px; }
+  .hdr__logo img { height: 234px; top: -55px; }
 }
 
 /* Outlet resaltado: en el menú móvil, rojo brillante */
@@ -123,6 +130,6 @@
   .hdr__burger { display: inline-flex; }
 }
 @media (max-width: 560px) {
-  .hdr__logo { width: 90px; }
-  .hdr__logo img { height: 80px; }
+  .hdr__logo { width: 135px; }
+  .hdr__logo img { height: 120px; }
 }

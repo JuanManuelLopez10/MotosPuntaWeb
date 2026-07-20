@@ -1,4 +1,7 @@
 .pd { padding-top: var(--header-h); padding-bottom: var(--sp-9); }
+/* En horizontal el logo del header es grande y cuelga más; bajamos los breadcrumbs para
+   que no queden tapados. */
+@media (orientation: landscape) { .pd { padding-top: calc(var(--header-h) + var(--sp-7)); } }
 
 /* Breadcrumbs */
 .pd__crumbs {
