@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowLeft, ChevronRight, MessageCircle, ShoppingCart, Percent, CalendarClock,
-  Check, Gauge, Zap, ShieldCheck, ArrowDownUp, Waves, Navigation, Cog, Fuel, Wrench,
+  Check, Gauge, Zap, ShieldCheck, ArrowDownUp, Waves, Navigation, Cog, Fuel, Wrench, Sun,
 } from "lucide-react";
 import PageTransition from "../components/PageTransition";
 import Loader from "../components/Loader";
@@ -89,6 +89,20 @@ const MOTO_FEATURES = [
   { key: "embragueAntirrebote", label: "Embrague antirrebote", icon: Cog },
 ];
 
+// --- Cascos ---
+const CASCO_SPECS = [
+  ["material", "Material"],
+  ["cierre", "Cierre"],
+  ["colorVisor", "Color del visor"],
+  ["peso", "Peso", "g"],
+];
+const CASCO_HOMOLOGATIONS = [
+  { key: "ece2206", label: "Homologación ECE 22.06", icon: ShieldCheck },
+  { key: "ece2205", label: "Homologación ECE 22.05", icon: ShieldCheck },
+  { key: "dot", label: "Homologación DOT", icon: ShieldCheck },
+  { key: "visorSolarInterno", label: "Visor solar interno", icon: Sun },
+];
+
 const truthyBool = (v) => v === true || v === "true" || v === 1 || v === "1";
 const specText = (val, unit) => {
   const s = String(val ?? "").trim();
@@ -97,22 +111,27 @@ const specText = (val, unit) => {
 };
 
 // Número que cuenta hacia arriba al montar (los stats viven en el hero, siempre visible).
+// Soporta decimales (ej. "14,8" HP): la coma se toma como separador decimal.
 function CountUp({ value, unit }) {
+  const raw = String(value ?? "").replace(",", ".");
+  const target = parseFloat(raw.replace(/[^\d.]/g, "")) || 0;
+  const frac = raw.includes(".") ? raw.split(".")[1].replace(/\D/g, "") : "";
+  const decimals = Math.min(frac.length, 2);
   const [n, setN] = useState(0);
-  const target = Number(String(value).replace(/[^\d]/g, "")) || 0;
   useEffect(() => {
     if (typeof document !== "undefined" && document.hidden) { setN(target); return; } // sin rAF: número final
     let raf;
     const t0 = performance.now();
     const tick = (t) => {
       const p = Math.min(1, (t - t0) / 1000);
-      setN(Math.round(target * (1 - Math.pow(1 - p, 3))));
+      setN(target * (1 - Math.pow(1 - p, 3)));
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => { if (raf) cancelAnimationFrame(raf); };
   }, [target]);
-  return <>{n.toLocaleString("es-UY")}{unit ? <span className="pd__statUnit"> {unit}</span> : null}</>;
+  const shown = n.toLocaleString("es-UY", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  return <>{shown}{unit ? <span className="pd__statUnit"> {unit}</span> : null}</>;
 }
 
 export default function Producto() {
@@ -201,6 +220,11 @@ export default function Producto() {
   const attrTiles = !moto
     ? [["Marca", product.brand], ["Color", product.color], ["Acabado", product.acabado], casco && ["Diseño", product.pattern]].filter((a) => a && a[1])
     : [];
+  const cascoSpecs = casco
+    ? CASCO_SPECS.map(([k, label, unit]) => ({ label, value: specText(product[k], unit) })).filter((r) => r.value)
+    : [];
+  const cascoFeatures = casco ? CASCO_HOMOLOGATIONS.filter((f) => truthyBool(product[f.key])) : [];
+  const sharpStars = casco ? Math.min(5, Math.round(Number(String(product.estrellasSharp || "").replace(/[^\d]/g, "")) || 0)) : 0;
 
   const ActionsBlock = (
     moto && soldOut ? (
@@ -326,6 +350,44 @@ export default function Producto() {
                     <dl className="pd__specs">
                       {g.rows.map((r) => (<div key={r.label} className="pd__spec"><dt>{r.label}</dt><dd>{r.value}</dd></div>))}
                     </dl>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Especificaciones (cascos) */}
+          {casco && (cascoSpecs.length > 0 || sharpStars > 0) && (
+            <div className="pd__section">
+              <Reveal><h2 className="pd__secTitle"><Gauge size={22} /> Especificaciones</h2></Reveal>
+              <div className="pd__specGroups">
+                <Reveal className="pd__specGroup">
+                  <dl className="pd__specs">
+                    {cascoSpecs.map((r) => (<div key={r.label} className="pd__spec"><dt>{r.label}</dt><dd>{r.value}</dd></div>))}
+                    {sharpStars > 0 && (
+                      <div className="pd__spec">
+                        <dt>Estrellas SHARP</dt>
+                        <dd>
+                          <span className="pd__sharp" aria-label={`${sharpStars} de 5 estrellas SHARP`}>{"★".repeat(sharpStars)}{"☆".repeat(5 - sharpStars)}</span>
+                          <span className="pd__sharpN"> {sharpStars}/5</span>
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                </Reveal>
+              </div>
+            </div>
+          )}
+
+          {/* Homologaciones y equipamiento (cascos) */}
+          {casco && cascoFeatures.length > 0 && (
+            <div className="pd__section">
+              <Reveal><h2 className="pd__secTitle"><ShieldCheck size={22} /> Homologaciones y equipamiento</h2></Reveal>
+              <div className="pd__featGrid">
+                {cascoFeatures.map((f, i) => (
+                  <Reveal key={f.key} delay={i * 0.05} className="pd__feat">
+                    <f.icon size={22} />
+                    <span>{f.label}</span>
                   </Reveal>
                 ))}
               </div>

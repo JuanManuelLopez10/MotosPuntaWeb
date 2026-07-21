@@ -95,6 +95,8 @@
 .pd__spec + .pd__spec { border-top: 1px solid var(--border); }
 .pd__spec dt { color: var(--text-muted); font-size: 0.92rem; }
 .pd__spec dd { font-family: var(--font-display); font-weight: 600; color: var(--text); text-align: right; }
+.pd__sharp { color: var(--accent-bright); letter-spacing: 2px; }
+.pd__sharpN { color: var(--text-muted); font-size: 0.85rem; }
 
 /* Talles */
 .pd__sizes { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
