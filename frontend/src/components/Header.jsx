@@ -35,6 +35,7 @@ export default function Header() {
   }, [open]);
 
   return (
+    <>
     <header className={`hdr ${scrolled ? "hdr--solid" : ""}`}>
       <div className="container hdr__row">
         <Link to="/" className="hdr__logo" aria-label="Motos Punta — inicio">
@@ -59,7 +60,10 @@ export default function Header() {
           {open ? <X size={26} /> : <Menu size={26} />}
         </button>
       </div>
+    </header>
 
+      {/* El menú va FUERA del <header>: si el header (sólido) tiene backdrop-filter, un
+          hijo position:fixed se posiciona relativo al header (76px) y el menú colapsa. */}
       {open && (
         <div className="hdr__mobile" onClick={() => setOpen(false)}>
           <nav className="hdr__mobileNav" aria-label="Menú móvil">
@@ -77,6 +81,6 @@ export default function Header() {
           </nav>
         </div>
       )}
-    </header>
+    </>
   );
 }
