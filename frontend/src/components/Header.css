@@ -104,9 +104,12 @@
 .hdr__mobile {
   position: fixed;
   inset: var(--header-h) 0 0 0;
-  background: rgba(10, 10, 11, 0.97);
-  backdrop-filter: blur(8px);
+  /* Opaco y SIN backdrop-filter a propósito: el blur ponía el menú en una capa de
+     compositing que en algunos móviles (Samsung Internet) quedaba por debajo del marquee
+     animado y del FAB, dejándolos "sangrar" por encima. Opaco = tapa todo, sin bleed. */
+  background: var(--bg);
   z-index: 49;
+  overflow-y: auto;
 }
 .hdr__mobileNav {
   display: flex;
