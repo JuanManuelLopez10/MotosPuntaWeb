@@ -4,28 +4,51 @@
 > Proyecto SEPARADO del publicador de Instagram (ese tiene su propio ESTADO en
 > `C:\Users\26lop\OneDrive\Escritorio\Instagram\_automation\ESTADO.md`).
 
-## 🚀 DEPLOY (17/07/2026) — LEER PRIMERO
-**Todo el trabajo (rebuild + Motos + loader + SEO + prerender + hero R2) está COMMITEADO y PUSHEADO a
-`main` (commit `6943f96`).** El sitio nuevo está **LIVE y funcionando** en Vercel: `motos-punta-web.vercel.app`
-(verificado: og-cover 99KB, prerender de productos con precio/stock reales de Render, robots/sitemap OK). El
-video del hero se sirve desde **R2** (`media/Wallpaper.mp4`, subido con el tooling del publicador).
+## ⚡ ESTADO ACTUAL — LEER PRIMERO (últ. actualización: 21/07/2026)
 
-**⚠️ FALTA (acción de JM en el dashboard, no lo puedo hacer yo):**
-1. **El dominio `motospunta.uy` / `www.motospunta.uy` sigue en OTRO proyecto de Vercel (el viejo)** → todavía
-   muestra el sitio anterior. Hay **3 proyectos** conectados al repo (`motos-punta-web`, `-1xmx`, `-jsjo`), los
-   3 con el build nuevo; el dominio NO está en ninguno de esos. **Acción:** en Vercel, proyecto `motos-punta-web`
-   → Settings → Domains → **agregar `motospunta.uy` y `www.motospunta.uy`** (Vercel dirá que están en otro
-   proyecto y ofrecerá moverlos). Elegir un primario. Después, **borrar los proyectos duplicados** (`-1xmx`, `-jsjo`)
-   y el viejo para no confundir.
-2. **www vs no-www:** hoy `motospunta.uy` redirige (308) a `www.motospunta.uy`. El código (canonical/OG/sitemap)
-   usa **no-www** (`https://motospunta.uy`). Recomendado: setear **no-www como primario** en Vercel (coincide con
-   el código y con lo que pidió JM). Si se prefiere www, hay que cambiar `SITE_URL` en `src/lib/seo.js` y
-   `scripts/prerender.mjs` (+ index/sitemap/robots) a `https://www.motospunta.uy` y redeployar.
-3. **Render `ALLOWED_ORIGINS`:** sumar `https://motospunta.uy` (y/o `https://www.motospunta.uy`) para que los
-   formularios (contacto/financiación → `POST /api/leads`) anden desde el dominio final.
-4. **Vercel build:** confirmar en `motos-punta-web` que Root Directory = `frontend` y que el Build Command NO
-   esté forzado en el dashboard (para que use `vercel.json` → `build:seo` y corra el prerender).
-5. Opcional SEO: enviar el `sitemap.xml` en Google Search Console + armar Google Business Profile.
+**LA WEB NUEVA ESTÁ EN PRODUCCIÓN Y FUNCIONANDO en `https://motospunta.uy`.** Último commit en `main`:
+**`866b80a`** (repo web `MotosPuntaWeb`). Cada `git push` a `main` → Vercel corre `build:seo` (vite build +
+prerender) y deploya solo. Verificado en vivo: catálogo carga, prerender por-producto OK, formularios andan.
+
+**Infra ya resuelta (NO rehacer):**
+- Dominio `motospunta.uy` (+ `www`) está en el proyecto Vercel **`motos-punta-web`** (JM lo movió). Root
+  Directory = `frontend`, build = `npm run build:seo` (vía `vercel.json`). El apex redirige a **`www`** (JM lo
+  dejó así); el código/canonical usa **no-www** — los `canonical` lo resuelven, no es grave.
+- **CORS de Render resuelto**: JM agregó `motospunta.uy` + `www` a `ALLOWED_ORIGINS` → los forms (`POST /api/leads`)
+  y el fetch de productos andan desde el dominio.
+- **Video del hero** servido desde **R2** (`media/Wallpaper.mp4`), con fallback a imagen y sin bajarlo en mobile.
+- Backend Flask en Render (`motospuntaweb.onrender.com`, servicio Render `MotosPuntaWeb`) + Firestore, intactos.
+
+**Cómo trabajar la web (dev):** `cd frontend && npm run dev` (localhost:5173). El navegador del preview NO alcanza
+el API de Render (CORS) y **los screenshots se cuelgan** → levantar un **mock local** que sirva el snapshot en
+`/api/products` con CORS `*` (`scratchpad/mock-api.js` tiene además `/_save` para escribir assets) y arrancar Vite
+con `VITE_API_BASE_URL=http://localhost:8899`; verificar por `read_page`/`javascript_tool` (medir DOM/estilos). El
+`build` normal NO prerenderiza (rápido); el deploy usa `build:seo`. `dist/` está gitignoreado.
+
+**App Kotlin (repo `MotosPunta-StockApp`, working dir `AppByKotlin`):** último commit **`19b27c3`**, pusheado.
+**APK actual en `C:\Users\26lop\OneDrive\Escritorio\MotosPunta.apk`** (JM lo instala). Build:
+`JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"` + `.\gradlew.bat assembleDebug` → copiar
+`app\build\outputs\apk\debug\app-debug.apk` al Escritorio. No hay service account local → NO se puede escribir
+en Firestore desde acá (probar en el celu).
+
+**Hecho reciente (todo deployado/pusheado):**
+- **App**: decimales en datos de moto (Caballaje/Torque/Cap. tanque); campos nuevos de casco (material, cierre,
+  colorVisor, peso, estrellasSharp, ece2206, ece2205, dot, visorSolarInterno) e indumentaria (material);
+  **sync de ficha técnica** entre variantes del mismo modelo (`repo.syncSpecs(title, productType)` en `addProduct`:
+  se cargan los datos en UNA variante y se copian a las demás — motos = ficha completa, cascos = specs de casco).
+- **Web**: ficha de producto muestra los datos del casco ("Especificaciones" + "Homologaciones y equipamiento");
+  `CountUp` del hero soporta decimales ("14,8" HP); **fix del menú móvil** (opaco, sin backdrop-filter, y sacado
+  del `<header>` para que no colapse al scrollear); **2 financiaciones nuevas** (Crédito Motos Punta: 3 meses +
+  no clearing + entrega 50%; OCA: 4 meses + no clearing + >21) en `data/financing.js` (8 opciones en total).
+
+**Pendientes:**
+1. Borrar los **proyectos Vercel duplicados** (`motos-punta-web-1xmx`, `-jsjo`, y el viejo) — quedan sirviendo el
+   mismo repo, confunden. El bueno es `motos-punta-web`.
+2. Opcional: dejar **www vs no-www** 100% consistente (o poner no-www primario en Vercel, o cambiar `SITE_URL` a www).
+3. SEO externo: enviar `sitemap.xml` en **Google Search Console** + armar **Google Business Profile** (clave para
+   búsquedas locales). Opcional: sitemap dinámico de productos (hoy solo páginas fijas).
+4. **App**: cargar la ficha técnica real de motos y los datos de cascos (el sync facilita: cargar 1 variante por
+   modelo). Pendientes viejos: borrar 3 leads de prueba en Firestore, cálculo de cuotas (JM lo pasa).
 
 ## ⚡ ESTADO ACTUAL (15/07/2026)
 
