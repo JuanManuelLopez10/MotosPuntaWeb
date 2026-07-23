@@ -109,6 +109,36 @@ export const FINANCING = [
     ],
     criteria: { edadMin: 21, antiguedadMin: 6 },
   },
+  {
+    id: "credito-motospunta",
+    name: "Crédito Motos Punta",
+    tagline: "Financiación propia, con entrega del 50%.",
+    facts: [
+      { label: "Entrega", value: "50% del valor" },
+      { label: "Antigüedad", value: "3 meses" },
+    ],
+    requirements: [
+      "Al menos 3 meses de antigüedad laboral",
+      "No estar en el Clearing",
+      "Entrega del 50% del valor de la moto",
+    ],
+    criteria: { antiguedadMin: 3, clearingProhibido: true },
+  },
+  {
+    id: "oca",
+    name: "OCA",
+    tagline: "Requisitos accesibles.",
+    facts: [
+      { label: "Antigüedad", value: "4 meses" },
+      { label: "Edad mínima", value: "21 años" },
+    ],
+    requirements: [
+      "Al menos 4 meses de antigüedad laboral",
+      "No estar en el Clearing",
+      "Ser mayor de 21 años",
+    ],
+    criteria: { edadMin: 21, antiguedadMin: 4, clearingProhibido: true },
+  },
 ];
 
 // Preguntas del checklist de elegibilidad.
