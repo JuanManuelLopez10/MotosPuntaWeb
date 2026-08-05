@@ -50,7 +50,10 @@ export default function Financiacion() {
   const results = useMemo(() => FINANCING.map((f) => ({ f, ...evaluate(f, answers) })), [answers]);
   const answered = Object.values(answers).some((v) => v !== undefined && v !== "");
   const eligibleCount = results.filter((r) => r.status === "ok").length;
-  const shown = onlyEligible ? results.filter((r) => r.status !== "no") : results;
+  // Las opciones que no cumplís caen al fondo de la lista, para no desmotivar mientras
+  // se completa el checklist (el sort es estable → el resto mantiene su orden original).
+  const visible = onlyEligible ? results.filter((r) => r.status !== "no") : results;
+  const shown = [...visible].sort((a, b) => (a.status === "no" ? 1 : 0) - (b.status === "no" ? 1 : 0));
 
   const waFor = (name) => {
     const forMoto = motoName ? ` para la ${motoName}${motoPrice ? ` (${motoPrice})` : ""}` : "";
@@ -126,11 +129,13 @@ export default function Financiacion() {
             {shown.map(({ f, status, fails }, i) => (
               <motion.article
                 key={f.id}
+                layout
                 className={`fincard fincard--${status}`}
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -3 }}
                 viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.5, delay: (i % 3) * 0.05, ease: EASE }}
+                transition={{ duration: 0.5, delay: (i % 3) * 0.05, ease: EASE, y: { duration: 0.25, ease: EASE }, layout: { duration: 0.45, ease: EASE } }}
               >
                 <div className="fincard__top">
                   <h2 className="fincard__name">{f.name}</h2>

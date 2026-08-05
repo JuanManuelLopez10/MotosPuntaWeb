@@ -32,6 +32,41 @@
 .pd__stock.is-in { background: rgba(47, 191, 113, 0.16); color: #58d999; }
 .pd__stock.is-out { background: rgba(255, 90, 95, 0.14); color: #ff8a8e; }
 
+/* Bloque de compra (cascos / indumentaria / accesorios): talle + cantidad */
+.pd__buy { display: flex; flex-wrap: wrap; gap: var(--sp-5); margin-bottom: var(--sp-5); }
+.pd__buyLabel {
+  display: block; margin-bottom: var(--sp-2);
+  font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.05em;
+  font-size: 0.78rem; font-weight: 600; color: var(--text-muted);
+}
+.pd__sizeReq { font-style: normal; color: var(--accent-bright); text-transform: none; letter-spacing: 0; }
+.pd__sizeOpts { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.pd__sizeOpt {
+  min-width: 48px; height: 48px; padding: 0 var(--sp-3);
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-strong); border-radius: var(--radius);
+  font-family: var(--font-display); font-weight: 600; font-size: 1.02rem; color: var(--text);
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.pd__sizeOpt:hover { border-color: var(--text); }
+.pd__sizeOpt.is-on { background: var(--text); border-color: var(--text); color: var(--bg); }
+
+.pd__qty {
+  display: inline-flex; align-items: center; height: 48px;
+  border: 1px solid var(--border-strong); border-radius: var(--radius); overflow: hidden;
+}
+.pd__qty button {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 100%; color: var(--text-muted);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.pd__qty button:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.pd__qty button:disabled { opacity: 0.35; cursor: not-allowed; }
+.pd__qtyN { min-width: 40px; text-align: center; font-weight: 600; font-size: 1.05rem; }
+
+.pd__add.is-added { background: var(--success); }
+.pd__add.is-added:hover { background: var(--success); box-shadow: none; }
+
 .pd__actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 .pd__actions .btn { flex: 1; min-width: 150px; }
 .pd__cuota {

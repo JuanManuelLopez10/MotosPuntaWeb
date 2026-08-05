@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { NavLink, Link } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ShoppingBag } from "lucide-react";
 import { waLink } from "../data/site";
+import { useCart } from "../lib/cart.jsx";
 import "./Header.css";
 
 const WA_HREF = waLink("Hola Motos Punta 👋 Quiero hacer una consulta.");
@@ -21,6 +22,7 @@ const NAV = [
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { count } = useCart();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -55,6 +57,11 @@ export default function Header() {
             ),
           )}
         </nav>
+
+        <Link to="/carrito" className="hdr__cart" aria-label={count ? `Carrito (${count})` : "Carrito"}>
+          <ShoppingBag size={22} />
+          {count > 0 && <span key={count} className="hdr__cartBadge">{count}</span>}
+        </Link>
 
         <button className="hdr__burger" aria-label="Abrir menú" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
           {open ? <X size={26} /> : <Menu size={26} />}

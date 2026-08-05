@@ -6,6 +6,9 @@ import os
 from flask import Flask, request, jsonify, send_from_directory, Response
 from whatsapp_bot import send_message
 from meta_feed import build_feed_csv
+import mercadopago
+import requests
+import time
 
 app = Flask(__name__)
 
@@ -26,6 +29,15 @@ CORS(
 
 credentials_json = os.getenv("GOOGLE_CREDENTIALS")
 
+# Para desarrollo local: si no está la variable de entorno, se puede dejar el JSON del
+# service account en backend/fscredentials.json (git lo ignora). En producción (Render) se
+# sigue usando GOOGLE_CREDENTIALS.
+if not credentials_json:
+    _cred_file = os.path.join(os.path.dirname(__file__), "fscredentials.json")
+    if os.path.exists(_cred_file):
+        with open(_cred_file, "r", encoding="utf-8") as _f:
+            credentials_json = _f.read()
+
 if credentials_json:
     try:
         credentials_dict = json.loads(credentials_json)
@@ -40,6 +52,41 @@ else:
     db = None
 
 VERIFY_TOKEN = "motospunta_verify"
+
+# --- Checkout / Mercado Pago (todo configurable por variables de entorno) ---
+MP_ACCESS_TOKEN = os.getenv("MP_ACCESS_TOKEN", "")          # secreto: se carga en Render, nunca en el código
+USD_TO_UYU = float(os.getenv("USD_TO_UYU", "40"))           # tasa dólar->peso de RESPALDO (si falla la API)
+USD_UYU_MARGIN = float(os.getenv("USD_UYU_MARGIN", "1.0"))  # margen sobre la tasa de mercado (1.02 = +2%)
+MP_SURCHARGE_PCT = float(os.getenv("MP_SURCHARGE_PCT", "6"))  # recargo por pagar con tarjeta
+SITE_URL = os.getenv("SITE_URL", "https://motospunta.uy").rstrip("/")           # front (back_urls de MP)
+BACKEND_URL = os.getenv("BACKEND_URL", "https://motospuntaweb.onrender.com").rstrip("/")  # para el webhook
+SHOP_WHATSAPP = os.getenv("SHOP_WHATSAPP", "59899673830")   # a dónde avisar cada pedido
+
+mp_sdk = mercadopago.SDK(MP_ACCESS_TOKEN) if MP_ACCESS_TOKEN else None
+
+# Cotización dólar->peso: se consulta a una API pública (open.er-api.com) y se cachea unas
+# horas; si falla, cae al valor de respaldo USD_TO_UYU.
+_rate_cache = {"value": None, "ts": 0.0}
+RATE_TTL = 6 * 3600  # 6 horas
+
+
+def get_usd_to_uyu():
+    """Cotización dólar->peso (tasa de mercado * margen), cacheada. Fallback: USD_TO_UYU."""
+    now = time.time()
+    if _rate_cache["value"] and (now - _rate_cache["ts"] < RATE_TTL):
+        return _rate_cache["value"]
+    try:
+        resp = requests.get("https://open.er-api.com/v6/latest/USD", timeout=8)
+        rate = (resp.json().get("rates") or {}).get("UYU")
+        if rate and float(rate) > 0:
+            value = round(float(rate) * USD_UYU_MARGIN, 2)
+            _rate_cache["value"] = value
+            _rate_cache["ts"] = now
+            return value
+    except Exception as e:
+        print("Error consultando tasa USD->UYU:", e)
+    return _rate_cache["value"] or USD_TO_UYU
+
 productos = []
 filteredProducts = []
 filters = {"type":"", "brand": "", "color": "", "size": "", "MinPrice": "", "MaxPrice": ""}
@@ -293,6 +340,195 @@ def meta_feed_csv():
         mimetype="text/csv; charset=utf-8",
         headers={"Content-Disposition": "inline; filename=meta-feed.csv"},
     )
+
+
+# =====================  CHECKOUT / ÓRDENES  =====================
+
+def _price_usd(prod):
+    """Precio del producto como entero USD (los precios en Firestore son strings)."""
+    digits = "".join(ch for ch in str(prod.get("price", "")) if ch.isdigit())
+    return int(digits) if digits else 0
+
+
+def _fetch_product(pid):
+    """Lee un producto FRESCO de Firestore (no la caché) para validar precio y stock."""
+    doc = db.collection("products").document(pid).get()
+    if not doc.exists:
+        return None
+    d = doc.to_dict()
+    d["id"] = doc.id
+    return d
+
+
+def _notify_shop(message):
+    """Avisa al local por WhatsApp. Best-effort: si falla, no rompe la orden."""
+    try:
+        send_message(SHOP_WHATSAPP, message)
+    except Exception as e:
+        print("Aviso WhatsApp falló:", e)
+
+
+@app.route("/api/orders", methods=["POST"])
+def create_order():
+    """Crea una orden de cascos/indumentaria/accesorios. Recalcula SIEMPRE el precio
+    desde Firestore (nunca confía en el importe que manda el navegador). Para Mercado
+    Pago crea la preferencia y devuelve el init_point; para transferencia/efectivo deja
+    la orden pendiente y avisa al local."""
+    if db is None:
+        return jsonify({"error": "Base de datos no disponible"}), 503
+    data = request.get_json(silent=True) or {}
+    # Honeypot anti-spam.
+    if str(data.get("website") or "").strip():
+        return jsonify({"ok": True}), 200
+
+    cliente = data.get("cliente") or {}
+    nombre = str(cliente.get("nombre") or "").strip()
+    contacto = str(cliente.get("contacto") or "").strip()
+    entrega = data.get("entrega") if data.get("entrega") in ("retiro", "envio") else "retiro"
+    metodo = data.get("metodo")
+    if metodo not in ("transferencia", "efectivo", "mercadopago"):
+        return jsonify({"error": "Método de pago inválido"}), 400
+    if not nombre or not contacto:
+        return jsonify({"error": "Nombre y contacto son obligatorios"}), 400
+    if entrega == "envio" and not str(cliente.get("direccion") or "").strip():
+        return jsonify({"error": "Falta la dirección de envío"}), 400
+
+    # Recalcular precios desde Firestore (fuente de verdad).
+    order_items = []
+    subtotal = 0
+    for it in (data.get("items") or []):
+        pid = str(it.get("id") or "").strip()
+        try:
+            qty = int(it.get("qty") or 0)
+        except (TypeError, ValueError):
+            qty = 0
+        if not pid or qty < 1:
+            continue
+        prod = _fetch_product(pid)
+        if not prod:
+            return jsonify({"error": f"Producto no encontrado: {pid}"}), 400
+        if str(prod.get("productType", "")).lower() == "motos":
+            return jsonify({"error": "Las motos no se compran online"}), 400
+        if str(prod.get("availability", "")).lower() != "in stock":
+            return jsonify({"error": f"Sin stock: {prod.get('title', pid)}"}), 409
+        price = _price_usd(prod)
+        if price <= 0:
+            return jsonify({"error": f"Producto sin precio: {prod.get('title', pid)}"}), 400
+        qty = min(qty, 99)
+        subtotal += price * qty
+        order_items.append({
+            "id": pid, "title": prod.get("title", ""), "size": it.get("size"), "qty": qty,
+            "priceUsd": price, "color": prod.get("color", ""), "acabado": prod.get("acabado", ""),
+        })
+    if not order_items:
+        return jsonify({"error": "El carrito está vacío"}), 400
+
+    # El envío lo cobra la transportadora contra entrega: no se suma al pago online.
+    shipping = 0
+    base = subtotal + shipping
+    surcharge = round(base * MP_SURCHARGE_PCT / 100) if metodo == "mercadopago" else 0
+    total_usd = base + surcharge
+    estado = "reservado" if metodo == "efectivo" else "pendiente_pago"
+
+    order = {
+        "items": order_items,
+        "cliente": {
+            "nombre": nombre[:120], "contacto": contacto[:120],
+            "direccion": str(cliente.get("direccion") or "").strip()[:200],
+            "ciudad": str(cliente.get("ciudad") or "").strip()[:120],
+        },
+        "entrega": entrega, "metodo": metodo,
+        "subtotalUsd": subtotal, "envioUsd": shipping, "recargoUsd": surcharge, "totalUsd": total_usd,
+        "estado": estado, "createdAt": firestore.SERVER_TIMESTAMP,
+    }
+    ref = db.collection("orders").add(order)
+    order_id = ref[1].id
+
+    _notify_shop(_order_summary_msg(order, order_id))
+
+    if metodo != "mercadopago":
+        return jsonify({"ok": True, "orderId": order_id, "metodo": metodo, "estado": estado, "totalUsd": total_usd}), 201
+
+    # Mercado Pago: crear la preferencia (Checkout Pro). MP cobra en pesos.
+    if mp_sdk is None:
+        return jsonify({"error": "Mercado Pago no está configurado"}), 503
+    tasa = get_usd_to_uyu()
+    total_uyu = round(total_usd * tasa, 2)
+    preference = {
+        "items": [{
+            "title": f"Compra en Motos Punta ({len(order_items)} art.)",
+            "quantity": 1, "unit_price": total_uyu, "currency_id": "UYU",
+        }],
+        "payer": {"name": nombre},
+        "external_reference": order_id,
+        "back_urls": {
+            "success": f"{SITE_URL}/checkout/exito",
+            "failure": f"{SITE_URL}/checkout/error",
+            "pending": f"{SITE_URL}/checkout/pendiente",
+        },
+        "auto_return": "approved",
+        "notification_url": f"{BACKEND_URL}/api/mp/webhook",
+        "statement_descriptor": "MOTOSPUNTA",
+    }
+    try:
+        result = mp_sdk.preference().create(preference)
+        resp = result.get("response", {}) or {}
+        init_point = resp.get("init_point") or resp.get("sandbox_init_point")
+        if not init_point:
+            print("MP sin init_point:", resp)
+            return jsonify({"error": "No se pudo iniciar el pago"}), 502
+        db.collection("orders").document(order_id).update({"mpPreferenceId": resp.get("id"), "tasaUyu": tasa, "totalUyu": total_uyu})
+        return jsonify({"ok": True, "orderId": order_id, "metodo": metodo, "initPoint": init_point}), 201
+    except Exception as e:
+        print("Error creando preferencia MP:", e)
+        return jsonify({"error": "No se pudo iniciar el pago"}), 502
+
+
+def _order_summary_msg(order, order_id):
+    lines = [f"• {i['qty']}x {i['title']}" + (f" (T{i['size']})" if i.get("size") else "") for i in order["items"]]
+    entrega = "Envío a domicilio" if order["entrega"] == "envio" else "Retiro en el local"
+    metodo = {"transferencia": "Transferencia", "efectivo": "Efectivo (reserva)", "mercadopago": "Mercado Pago"}.get(order["metodo"], order["metodo"])
+    c = order["cliente"]
+    extra = f"\n{c['direccion']}" if order["entrega"] == "envio" and c.get("direccion") else ""
+    return (
+        "🛒 Nuevo pedido web\n\n" + "\n".join(lines) +
+        f"\n\nCliente: {c['nombre']} ({c['contacto']})" + extra +
+        f"\n{entrega} · {metodo}\nTotal: USD {order['totalUsd']}\nEstado: {order['estado']}\nOrden #{order_id}"
+    )
+
+
+@app.route("/api/mp/webhook", methods=["POST"])
+def mp_webhook():
+    """Notificación de Mercado Pago. Consulta el pago por API (eso valida su autenticidad),
+    actualiza el estado de la orden y avisa al local si quedó aprobado. Siempre responde 200
+    para que MP no reintente en loop."""
+    if mp_sdk is None or db is None:
+        return "", 200
+    data = request.get_json(silent=True) or {}
+    payment_id = None
+    if data.get("type") == "payment":
+        payment_id = (data.get("data") or {}).get("id")
+    payment_id = payment_id or request.args.get("data.id") or request.args.get("id")
+    if not payment_id:
+        return "", 200
+    try:
+        pay = mp_sdk.payment().get(payment_id)
+        info = pay.get("response", {}) or {}
+        status = info.get("status")
+        order_id = info.get("external_reference")
+        if order_id:
+            nuevo = {
+                "approved": "pagado", "rejected": "rechazado", "cancelled": "cancelado",
+                "refunded": "reembolsado", "in_process": "pendiente_pago", "pending": "pendiente_pago",
+            }.get(status, "pendiente_pago")
+            db.collection("orders").document(order_id).update({
+                "estado": nuevo, "mpPaymentId": str(payment_id), "mpStatus": status,
+            })
+            if status == "approved":
+                _notify_shop(f"✅ Pago confirmado por Mercado Pago — Orden #{order_id}.")
+    except Exception as e:
+        print("Webhook MP error:", e)
+    return "", 200
 
 
 if __name__ == "__main__":

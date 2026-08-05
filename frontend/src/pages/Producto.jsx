@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowLeft, ChevronRight, MessageCircle, ShoppingCart, Percent, CalendarClock,
   Check, Gauge, Zap, ShieldCheck, ArrowDownUp, Waves, Navigation, Cog, Fuel, Wrench, Sun,
+  Minus, Plus,
 } from "lucide-react";
 import PageTransition from "../components/PageTransition";
 import Loader from "../components/Loader";
@@ -14,6 +15,7 @@ import {
   isOutlet, formatPreviousPrice, discountPct, availableSizes, PRODUCT_PLACEHOLDER,
 } from "../lib/catalog";
 import { useSeo, SITE_URL } from "../lib/seo";
+import { useCart } from "../lib/cart.jsx";
 import "./Producto.css";
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -141,6 +143,15 @@ export default function Producto() {
   const ctaRef = useRef(null);
   const [barVisible, setBarVisible] = useState(false);
 
+  // Compra (carrito): talle y cantidad elegidos, y feedback al agregar.
+  const { addItem } = useCart();
+  const [size, setSize] = useState(null);
+  const [qty, setQty] = useState(1);
+  const [added, setAdded] = useState(false);
+  const [sizeError, setSizeError] = useState(false);
+  const sizeRef = useRef(null);
+  const addedTimer = useRef(null);
+
   // Parallax con el scroll de la ventana (sin target ref, que rompe cuando el hero se
   // monta después del estado de carga).
   const { scrollY } = useScroll();
@@ -184,7 +195,11 @@ export default function Producto() {
       : { title: "Producto", description: "Ficha de producto de Motos Punta, Maldonado." },
   );
 
-  useEffect(() => { window.scrollTo(0, 0); }, [id]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    setSize(null); setQty(1); setAdded(false); setSizeError(false);
+    clearTimeout(addedTimer.current);
+  }, [id]);
 
   // Barra de compra fija: aparece cuando el CTA del hero ya pasó hacia arriba.
   useEffect(() => {
@@ -226,6 +241,34 @@ export default function Producto() {
   const cascoFeatures = casco ? CASCO_HOMOLOGATIONS.filter((f) => truthyBool(product[f.key])) : [];
   const sharpStars = casco ? Math.min(5, Math.round(Number(String(product.estrellasSharp || "").replace(/[^\d]/g, "")) || 0)) : 0;
 
+  // Comprable = no es moto, tiene precio y hay stock. Solo entonces se puede agregar
+  // al carrito; si no, queda el flujo de consulta por WhatsApp.
+  const canBuy = !moto && !!price && !soldOut;
+  const needsSize = sizes.length > 0;
+  const handleAdd = () => {
+    if (!canBuy) return;
+    if (needsSize && !size) {
+      setSizeError(true);
+      sizeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    addItem({
+      id: product.id,
+      title: product.title,
+      image: productImage(product),
+      price: priceValue(product.price),
+      size: size || null,
+      qty,
+      brand: product.brand || "",
+      color: product.color || "",
+      acabado: product.acabado || "",
+      productType: product.productType || "",
+    });
+    setAdded(true);
+    clearTimeout(addedTimer.current);
+    addedTimer.current = setTimeout(() => setAdded(false), 1800);
+  };
+
   const ActionsBlock = (
     moto && soldOut ? (
       <a className="btn btn-primary" href={waLink(waReserveMessage(name))} target="_blank" rel="noreferrer"><CalendarClock size={18} /> Encargar / Reservar</a>
@@ -233,6 +276,13 @@ export default function Producto() {
       <>
         <a className="btn btn-primary" href={waLink(waBuyMessage(name, price))} target="_blank" rel="noreferrer"><ShoppingCart size={18} /> Comprar</a>
         <Link className="btn btn-secondary" to={`/financiacion?moto=${encodeURIComponent(product.id)}`}><Percent size={18} /> Financiación</Link>
+      </>
+    ) : canBuy ? (
+      <>
+        <button type="button" className={`btn btn-primary pd__add ${added ? "is-added" : ""}`} onClick={handleAdd}>
+          {added ? <><Check size={18} /> Agregado</> : <><ShoppingCart size={18} /> Agregar al carrito</>}
+        </button>
+        <a className="btn btn-secondary" href={waLink(waProductMessage(name))} target="_blank" rel="noreferrer"><MessageCircle size={18} /> Consultar</a>
       </>
     ) : (
       <a className="btn btn-primary" href={waLink(waProductMessage(name))} target="_blank" rel="noreferrer"><MessageCircle size={18} /> Consultar por WhatsApp</a>
@@ -281,6 +331,39 @@ export default function Producto() {
                 )}
                 <span className={`pd__stock ${soldOut ? "is-out" : "is-in"}`}>{soldOut ? "Sin stock" : "En stock"}</span>
               </motion.div>
+
+              {canBuy && (
+                <div className="pd__buy">
+                  {needsSize && (
+                    <div className="pd__sizePick" ref={sizeRef}>
+                      <span className="pd__buyLabel">
+                        Talle {sizeError && !size && <em className="pd__sizeReq">— elegí uno</em>}
+                      </span>
+                      <div className="pd__sizeOpts">
+                        {sizes.map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            className={`pd__sizeOpt ${size === s ? "is-on" : ""}`}
+                            aria-pressed={size === s}
+                            onClick={() => { setSize(s); setSizeError(false); }}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="pd__qtyPick">
+                    <span className="pd__buyLabel">Cantidad</span>
+                    <div className="pd__qty">
+                      <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={qty <= 1} aria-label="Restar uno"><Minus size={16} /></button>
+                      <span className="pd__qtyN tabular">{qty}</span>
+                      <button type="button" onClick={() => setQty((q) => Math.min(99, q + 1))} aria-label="Sumar uno"><Plus size={16} /></button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="pd__actions" ref={ctaRef}>{ActionsBlock}</div>
 
@@ -394,8 +477,9 @@ export default function Producto() {
             </div>
           )}
 
-          {/* Talles (ropa / cascos) */}
-          {sizes.length > 0 && (
+          {/* Talles (ropa / cascos) — solo informativo cuando no se puede comprar (sin
+              precio o sin stock); si es comprable, el selector de talle vive en el hero. */}
+          {sizes.length > 0 && !canBuy && (
             <div className="pd__section">
               <Reveal><h2 className="pd__secTitle">Talles disponibles</h2></Reveal>
               <Reveal className="pd__sizes">{sizes.map((s) => <span key={s} className="pd__size">{s}</span>)}</Reveal>

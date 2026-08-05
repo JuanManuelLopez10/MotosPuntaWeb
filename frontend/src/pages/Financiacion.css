@@ -23,9 +23,11 @@
   padding: var(--sp-5);
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  transition: border-color var(--dur) var(--ease);
 }
-.fincard:hover { transform: translateY(-3px); border-color: var(--border-strong); }
+/* El "levantar" en hover lo maneja framer-motion (whileHover) para no chocar con el
+   transform que usa la animación de reordenamiento (layout). */
+.fincard:hover { border-color: var(--border-strong); }
 .fincard__top { display: flex; align-items: center; gap: var(--sp-3); }
 .fincard__name { font-size: 1.5rem; margin-right: auto; }
 .fincard__badge {

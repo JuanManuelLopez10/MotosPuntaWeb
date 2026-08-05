@@ -27,6 +27,40 @@ export function waReserveMessage(productName) {
   return `Hola Motos Punta 👋 Quiero encargar/reservar: ${productName}. ¿Cómo es la disponibilidad y la seña?`;
 }
 
+// Mensaje con el detalle del carrito (Fase 1: el cierre de la compra es por WhatsApp).
+export function waCartMessage(items, totalText) {
+  const lines = items.map((it) => {
+    const name = [it.title, it.color, it.acabado].filter(Boolean).join(" ");
+    const size = it.size ? ` (Talle ${it.size})` : "";
+    return `• ${it.qty}× ${name}${size}`;
+  });
+  let msg = `Hola Motos Punta 👋 Quiero comprar:\n\n${lines.join("\n")}`;
+  if (totalText) msg += `\n\nTotal: ${totalText}`;
+  msg += `\n\n¿Cómo seguimos?`;
+  return msg;
+}
+
+// Mensaje del checkout: incluye entrega y método de pago elegidos (Fase 2a: el cierre de
+// transferencia/efectivo se hace por WhatsApp hasta que esté el backend de órdenes).
+export function waOrderMessage({ items, entrega, direccion, metodo, totalText, nombre }) {
+  const lines = items.map((it) => {
+    const name = [it.title, it.color, it.acabado].filter(Boolean).join(" ");
+    const size = it.size ? ` (Talle ${it.size})` : "";
+    return `• ${it.qty}× ${name}${size}`;
+  });
+  const entregaTxt = entrega === "envio" ? `Entrega: envío a ${direccion}` : "Entrega: retiro en el local";
+  const metodoTxt = {
+    transferencia: "Pago: transferencia bancaria",
+    efectivo: "Pago: efectivo al retirar (reserva)",
+    mercadopago: "Pago: Mercado Pago (tarjeta)",
+  }[metodo] || "";
+  let msg = `Hola Motos Punta 👋${nombre ? ` Soy ${nombre}.` : ""} Quiero hacer este pedido:\n\n${lines.join("\n")}`;
+  msg += `\n\n${entregaTxt}\n${metodoTxt}`;
+  if (totalText) msg += `\nTotal: ${totalText}`;
+  msg += `\n\n¿Cómo seguimos?`;
+  return msg;
+}
+
 // Media de fondo del hero (primera impresión). `src` es la imagen base (siempre visible);
 // `video` es el mp4 que se superpone en escritorio (alojado en R2 para no inflar el repo).
 // Si el video falla o no está, queda la imagen (fallback en Home.jsx).

@@ -7,6 +7,9 @@ import Home from "./pages/Home";
 import Motos from "./pages/Motos";
 import Catalogo from "./pages/Catalogo";
 import Producto from "./pages/Producto";
+import Carrito from "./pages/Carrito";
+import Checkout from "./pages/Checkout";
+import CheckoutResultado from "./pages/CheckoutResultado";
 import Outlet from "./pages/Outlet";
 import Financiacion from "./pages/Financiacion";
 import Contacto from "./pages/Contacto";
@@ -31,6 +34,11 @@ export default function App() {
           <Route path="/producto/:id" element={<Producto />} />
           {/* Alias: los links del feed de Meta/WhatsApp usan /product/{itemGroupId} */}
           <Route path="/product/:id" element={<Producto />} />
+          <Route path="/carrito" element={<Carrito />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout/exito" element={<CheckoutResultado />} />
+          <Route path="/checkout/error" element={<CheckoutResultado />} />
+          <Route path="/checkout/pendiente" element={<CheckoutResultado />} />
           <Route path="/outlet" element={<Outlet />} />
           <Route path="/financiacion" element={<Financiacion />} />
           <Route path="/contacto" element={<Contacto />} />
