@@ -88,6 +88,8 @@ def get_usd_to_uyu():
     return _rate_cache["value"] or USD_TO_UYU
 
 productos = []
+_productos_ts = 0.0
+PRODUCTS_TTL = 60  # segundos: el catálogo en memoria se refresca desde Firestore como máximo 1 vez por minuto
 filteredProducts = []
 filters = {"type":"", "brand": "", "color": "", "size": "", "MinPrice": "", "MaxPrice": ""}
 
@@ -246,16 +248,28 @@ def set_products():
 
 @app.route("/api/products")
 def get_productos():
-    global productos
-    if not productos:
+    global productos, _productos_ts
+    now = time.time()
+    # Ctrl+Shift+R (hard refresh) hace que el navegador mande Cache-Control/Pragma: no-cache.
+    # En ese caso se ignora el TTL y se recarga en el momento; un F5 normal no manda no-cache,
+    # así que respeta el TTL.
+    hard_refresh = "no-cache" in (
+        request.headers.get("Cache-Control", "") + " " + request.headers.get("Pragma", "")
+    ).lower()
+    # Recarga desde Firestore si se pidió refresco forzado, la caché está vacía o venció el TTL;
+    # si no, la reutiliza. Así un alta/baja/edición del catálogo se refleja como máximo en
+    # PRODUCTS_TTL segundos (o al instante con Ctrl+Shift+R), en vez de quedar congelada hasta
+    # que el proceso se reinicie.
+    if hard_refresh or not productos or (now - _productos_ts) >= PRODUCTS_TTL:
         productos_ref = db.collection("products")
         docs = productos_ref.stream()
-        productos= []
+        productos = []
         print("Get by db")
         for doc in docs:
             data = doc.to_dict()
             data["id"] = doc.id
             productos.append(data)
+        _productos_ts = now
     else:
         print("Get by cache")
     return jsonify(productos)
