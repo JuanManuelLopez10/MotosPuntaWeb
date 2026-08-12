@@ -62,7 +62,7 @@ export default function ProductCard({ product }) {
             }
           }}
         />
-        {soldOut && <span className="pcard__badge">Sin stock</span>}
+        {moto && soldOut && <span className="pcard__badge">Sin stock</span>}
         {outlet && <span className="pcard__outlet">{disc ? `-${disc}%` : "Outlet"}</span>}
       </Link>
 

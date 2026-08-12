@@ -329,7 +329,9 @@ export default function Producto() {
                 ) : (
                   <span className="pd__price tabular">{price || "Consultar precio"}</span>
                 )}
-                <span className={`pd__stock ${soldOut ? "is-out" : "is-in"}`}>{soldOut ? "Sin stock" : "En stock"}</span>
+                {(moto || !soldOut) && (
+                  <span className={`pd__stock ${soldOut ? "is-out" : "is-in"}`}>{soldOut ? "Sin stock" : "En stock"}</span>
+                )}
               </motion.div>
 
               {canBuy && (
@@ -391,7 +393,7 @@ export default function Producto() {
                 transition={{ duration: 0.8, ease: EASE, delay: 0.1 }}
                 onError={(e) => { if (e.currentTarget.src !== window.location.origin + PRODUCT_PLACEHOLDER) e.currentTarget.src = PRODUCT_PLACEHOLDER; }}
               />
-              {soldOut && <span className="pcard__badge pd__stageBadge">Sin stock</span>}
+              {moto && soldOut && <span className="pcard__badge pd__stageBadge">Sin stock</span>}
               {outlet && <span className="pcard__outlet pd__stageBadge pd__stageBadge--r">{disc ? `-${disc}%` : "Outlet"}</span>}
             </div>
           </div>
