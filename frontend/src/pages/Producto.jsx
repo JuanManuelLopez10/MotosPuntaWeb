@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowLeft, ChevronRight, MessageCircle, ShoppingCart, Percent, CalendarClock,
   Check, Gauge, Zap, ShieldCheck, ArrowDownUp, Waves, Navigation, Cog, Fuel, Wrench, Sun,
-  Minus, Plus,
+  Minus, Plus, Flame, Armchair, SlidersHorizontal, Droplets, Glasses,
 } from "lucide-react";
 import PageTransition from "../components/PageTransition";
 import Loader from "../components/Loader";
@@ -75,7 +75,8 @@ const HERO_STATS = [
 const SPEC_GROUPS = [
   { title: "Motor", icon: Cog, keys: [
     ["cilindrada", "Cilindrada", "cc"], ["cilindros", "Cilindros"], ["caballaje", "Potencia", "HP"],
-    ["torque", "Torque", "Nm"], ["refrigeracion", "Refrigeración"], ["cantidadCambios", "Cambios"],
+    ["torque", "Torque", "Nm"], ["refrigeracion", "Refrigeración"], ["alimentacion", "Alimentación"],
+    ["cantidadCambios", "Cambios"],
   ] },
   { title: "Frenos", icon: ShieldCheck, keys: [["frenos", "Frenos"], ["marcaFrenos", "Marca de frenos"]] },
   { title: "Chasis y rodado", icon: Wrench, keys: [["rodadoDelantero", "Rodado delantero"], ["rodadoTrasero", "Rodado trasero"]] },
@@ -89,6 +90,9 @@ const MOTO_FEATURES = [
   { key: "monoshockTrasero", label: "Monoshock trasero", icon: Waves },
   { key: "controlCrucero", label: "Control crucero", icon: Navigation },
   { key: "embragueAntirrebote", label: "Embrague antirrebote", icon: Cog },
+  { key: "calientaPunos", label: "Calienta puños", icon: Flame },
+  { key: "calientaAsientos", label: "Calienta asientos", icon: Armchair },
+  { key: "modosManejo", label: "Modos de manejo", icon: SlidersHorizontal },
 ];
 
 // --- Cascos ---
@@ -103,6 +107,8 @@ const CASCO_HOMOLOGATIONS = [
   { key: "ece2205", label: "Homologación ECE 22.05", icon: ShieldCheck },
   { key: "dot", label: "Homologación DOT", icon: ShieldCheck },
   { key: "visorSolarInterno", label: "Visor solar interno", icon: Sun },
+  { key: "pinlock", label: "Pinlock", icon: Droplets },
+  { key: "dobleVisor", label: "Doble visor", icon: Glasses },
 ];
 
 const truthyBool = (v) => v === true || v === "true" || v === 1 || v === "1";
@@ -240,6 +246,10 @@ export default function Producto() {
     : [];
   const cascoFeatures = casco ? CASCO_HOMOLOGATIONS.filter((f) => truthyBool(product[f.key])) : [];
   const sharpStars = casco ? Math.min(5, Math.round(Number(String(product.estrellasSharp || "").replace(/[^\d]/g, "")) || 0)) : 0;
+  // Especificaciones extra puntuales (mapa nombre → valor cargado por producto en la app).
+  const customSpecs = product.customSpecs && typeof product.customSpecs === "object" && !Array.isArray(product.customSpecs)
+    ? Object.entries(product.customSpecs).filter(([k, v]) => String(k).trim() && String(v ?? "").trim())
+    : [];
 
   // Comprable = no es moto, tiene precio y hay stock. Solo entonces se puede agregar
   // al carrito; si no, queda el flujo de consulta por WhatsApp.
@@ -475,6 +485,22 @@ export default function Producto() {
                     <span>{f.label}</span>
                   </Reveal>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Especificaciones extra (cargadas puntualmente por producto en la app) */}
+          {customSpecs.length > 0 && (
+            <div className="pd__section">
+              <Reveal><h2 className="pd__secTitle"><Gauge size={22} /> Más especificaciones</h2></Reveal>
+              <div className="pd__specGroups">
+                <Reveal className="pd__specGroup">
+                  <dl className="pd__specs">
+                    {customSpecs.map(([k, v]) => (
+                      <div key={k} className="pd__spec"><dt>{k}</dt><dd>{String(v)}</dd></div>
+                    ))}
+                  </dl>
+                </Reveal>
               </div>
             </div>
           )}
