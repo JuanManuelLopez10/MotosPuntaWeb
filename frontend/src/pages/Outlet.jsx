@@ -5,7 +5,7 @@ import { Tag, ArrowRight } from "lucide-react";
 import PageTransition from "../components/PageTransition";
 import Loader from "../components/Loader";
 import ProductCard from "../components/ProductCard";
-import { fetchProducts, isOutlet, formatPrice } from "../lib/catalog";
+import { fetchProducts, isOutlet, formatPrice, isMoto, inStock } from "../lib/catalog";
 import { useSeo } from "../lib/seo";
 import "./Outlet.css";
 
@@ -29,7 +29,7 @@ export default function Outlet() {
   }, []);
 
   const items = useMemo(
-    () => (products || []).filter((p) => isOutlet(p) && formatPrice(p.price)),
+    () => (products || []).filter((p) => isOutlet(p) && formatPrice(p.price) && (isMoto(p) || inStock(p))),
     [products],
   );
 

@@ -130,7 +130,8 @@ export default function Catalogo() {
     return products
       .filter((p) => (p.productType || "").toLowerCase() !== "motos")
       .filter((p) => active === "todos" || (p.productType || "").toLowerCase() === active)
-      .filter((p) => formatPrice(p.price));
+      .filter((p) => formatPrice(p.price))
+      .filter((p) => inStock(p));   // en el catálogo (todo no-moto) se ocultan los agotados
   }, [products, active]);
 
   // Facetado: la lista final y las opciones de cada filtro se calculan juntas. Cada
@@ -274,13 +275,6 @@ export default function Catalogo() {
                   <ChipGroup options={brandOptions} selected={brands} onToggle={toggle(setBrands)} />
                 </FilterSection>
               )}
-
-              <FilterSection title="Disponibilidad" count={stockOnly ? 1 : 0}>
-                <label className="filt__check filt__toggle">
-                  <input type="checkbox" checked={stockOnly} onChange={(e) => setStockOnly(e.target.checked)} />
-                  <span>Solo con stock</span>
-                </label>
-              </FilterSection>
             </aside>
 
             <div className="cat__results">

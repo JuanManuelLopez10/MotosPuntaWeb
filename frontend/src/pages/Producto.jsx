@@ -185,6 +185,7 @@ export default function Producto() {
     if (!products || !product) return [];
     return products
       .filter((p) => p.id !== product.id && (p.productType || "").toLowerCase() === (product.productType || "").toLowerCase() && formatPrice(p.price))
+      .filter((p) => isMoto(p) || inStock(p))   // no mostrar no-motos agotados
       .slice(0, 4);
   }, [products, product]);
 
