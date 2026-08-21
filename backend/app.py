@@ -331,7 +331,9 @@ def meta_feed_productos_csv():
     if db is None:
         return Response("Firestore no inicializado", status=503, mimetype="text/plain")
     return Response(
-        build_feed_csv_from_productos(read_productos(db)),
+        # require_image=False: NO se chequea cada foto en R2 con HEAD (cientos de requests que
+        # hacían pasar el timeout de gunicorn). Igual se omiten las variantes sin `image`.
+        build_feed_csv_from_productos(read_productos(db), require_image=False),
         mimetype="text/csv; charset=utf-8",
         headers={"Content-Disposition": "inline; filename=meta-feed-productos.csv"},
     )
