@@ -7,13 +7,14 @@ import {
 } from "lucide-react";
 import PageTransition from "../components/PageTransition";
 import Loader from "../components/Loader";
-import ProductCard from "../components/ProductCard";
+import ModelCard from "../components/ModelCard";
 import Marquee from "../components/Marquee";
 import { waLink, MOTO_TYPE_META, MOTO_TYPE_ORDER } from "../data/site";
+import { typeSlug, PRODUCT_PLACEHOLDER } from "../lib/catalog";
 import {
-  fetchProducts, isMoto, inStock, formatPrice, priceValue, productImage,
-  productFullName, cc, typeSlug, PRODUCT_PLACEHOLDER,
-} from "../lib/catalog";
+  fetchModels, isMotoModel, modelInStock, modelImage, modelPrice, modelPriceValue,
+  modelCc, modelSpec, modelColors,
+} from "../lib/models";
 import { useSeo } from "../lib/seo";
 import "./Motos.css";
 
@@ -65,11 +66,11 @@ function CountUp({ value }) {
 }
 
 // Spec chip del spotlight (cc / HP), solo si el dato existe.
-function heroSpecs(p) {
+function heroSpecs(m) {
   const out = [];
-  const cilind = cc(p);
+  const cilind = modelCc(m);
   if (cilind) out.push(`${cilind} cc`);
-  const hp = String(p.caballaje || "").replace(/[^\d]/g, "");
+  const hp = String(modelSpec(m, "caballaje")).replace(/[^\d]/g, "");
   if (hp) out.push(`${hp} HP`);
   return out;
 }
@@ -94,7 +95,7 @@ function MotoHero({ motos, stats, onExplore }) {
 
   const current = has ? motos[idx] : null;
   const specs = current ? heroSpecs(current) : [];
-  const price = current ? formatPrice(current.price) : null;
+  const price = current ? modelPrice(current) : null;
 
   return (
     <section className="mhero" ref={heroRef}>
@@ -148,14 +149,14 @@ function MotoHero({ motos, stats, onExplore }) {
               >
                 <img
                   className="mhero__img"
-                  src={productImage(current)}
-                  alt={productFullName(current)}
+                  src={modelImage(current)}
+                  alt={current.title}
                   onError={(e) => { if (e.currentTarget.src !== window.location.origin + PRODUCT_PLACEHOLDER) e.currentTarget.src = PRODUCT_PLACEHOLDER; }}
                 />
                 <div className="mhero__caption">
                   <div className="mhero__capText">
                     {current.brand && <span className="mhero__capBrand">{current.brand}</span>}
-                    <Link to={`/producto/${encodeURIComponent(current.id)}`} className="mhero__capName">{current.title}</Link>
+                    <Link to={`/producto/${encodeURIComponent(current.slug)}`} className="mhero__capName">{current.title}</Link>
                     <div className="mhero__capMeta">
                       {current.type && <span className="mhero__capType">{current.type}</span>}
                       {specs.map((s) => <span key={s} className="mhero__capSpec">{s}</span>)}
@@ -163,7 +164,7 @@ function MotoHero({ motos, stats, onExplore }) {
                   </div>
                   <div className="mhero__capBuy">
                     <span className="mhero__capPrice tabular">{price || "Consultar"}</span>
-                    <Link to={`/producto/${encodeURIComponent(current.id)}`} className="mhero__capLink">Ver ficha <ChevronRight size={15} /></Link>
+                    <Link to={`/producto/${encodeURIComponent(current.slug)}`} className="mhero__capLink">Ver ficha <ChevronRight size={15} /></Link>
                   </div>
                 </div>
               </motion.div>
@@ -177,14 +178,14 @@ function MotoHero({ motos, stats, onExplore }) {
           <div className="mhero__dots" role="tablist" aria-label="Motos destacadas">
             {motos.map((m, i) => (
               <button
-                key={m.id}
+                key={m.slug}
                 role="tab"
                 aria-selected={i === idx}
                 aria-label={m.title}
                 className={`mhero__dot ${i === idx ? "is-on" : ""}`}
                 onClick={() => setIdx(i)}
               >
-                <img src={productImage(m)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.opacity = 0; }} />
+                <img src={modelImage(m)} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.opacity = 0; }} />
               </button>
             ))}
           </div>
@@ -235,11 +236,11 @@ export default function Motos() {
 
   useEffect(() => {
     let alive = true;
-    fetchProducts().then((p) => alive && setProducts(p)).catch((e) => alive && setError(e.message));
+    fetchModels().then((m) => alive && setProducts(m)).catch((e) => alive && setError(e.message));
     return () => { alive = false; };
   }, []);
 
-  const motos = useMemo(() => (products || []).filter(isMoto), [products]);
+  const motos = useMemo(() => (products || []).filter(isMotoModel), [products]);
 
   // Tipos presentes en los datos, ordenados por el orden preferido.
   const typeList = useMemo(() => {
@@ -277,23 +278,18 @@ export default function Motos() {
   const typeImages = useMemo(() => {
     const out = {};
     typeList.forEach((t) => {
-      const pool = motos.filter((p) => typeSlug(p.type) === t.slug && (p.imageLink || "").trim());
-      const pick =
-        pool.find((p) => inStock(p) && /rojo|red/i.test(p.color || "")) ||
-        pool.find(inStock) ||
-        pool.find((p) => /rojo|red/i.test(p.color || "")) ||
-        pool[0];
-      out[t.slug] = pick ? productImage(pick) : null;
+      const pool = motos.filter((m) => typeSlug(m.type) === t.slug);
+      const pick = pool.find((m) => modelInStock(m)) || pool[0];
+      out[t.slug] = pick ? modelImage(pick) : null;
     });
     return out;
   }, [typeList, motos]);
 
-  // Spotlight: flagships con foto (con ficha técnica primero), por precio desc.
+  // Spotlight: flagships (con ficha técnica primero), por precio desc.
   const spotlight = useMemo(() => {
-    const withImg = motos.filter((p) => (p.imageLink || "").trim());
-    const flagship = withImg.filter((p) => inStock(p) && String(p.caballaje || "").trim());
-    const base = flagship.length >= 3 ? flagship : withImg.filter(inStock);
-    const list = (base.length ? base : withImg).sort((a, b) => (priceValue(b.price) || 0) - (priceValue(a.price) || 0));
+    const flagship = motos.filter((m) => modelInStock(m) && modelSpec(m, "caballaje"));
+    const base = flagship.length >= 3 ? flagship : motos.filter(modelInStock);
+    const list = (base.length ? base : motos).sort((a, b) => (modelPriceValue(b) || 0) - (modelPriceValue(a) || 0));
     return list.slice(0, 5);
   }, [motos]);
 
@@ -306,7 +302,7 @@ export default function Motos() {
     const img = new Image();
     img.onload = finish;
     img.onerror = finish;
-    img.src = productImage(spotlight[0]);
+    img.src = modelImage(spotlight[0]);
     if (img.complete) finish();
     const t = setTimeout(finish, 3500);
     return () => { clearTimeout(t); img.onload = null; img.onerror = null; };
@@ -316,7 +312,7 @@ export default function Motos() {
     const brandCount = new Set(motos.map((p) => (p.brand || "").trim()).filter(Boolean)).size;
     return [
       { label: "Modelos", value: motos.length },
-      { label: "En stock", value: motos.filter(inStock).length },
+      { label: "En stock", value: motos.filter(modelInStock).length },
       { label: "Marcas", value: brandCount },
     ];
   }, [motos]);
@@ -331,7 +327,7 @@ export default function Motos() {
     [scope],
   );
   const ccOptions = useMemo(
-    () => [...new Set(scope.map(cc).filter(Boolean))].sort((a, b) => Number(a) - Number(b)),
+    () => [...new Set(scope.map(modelCc).filter(Boolean))].sort((a, b) => Number(a) - Number(b)),
     [scope],
   );
 
@@ -339,21 +335,21 @@ export default function Motos() {
     const q = query.trim().toLowerCase();
     const min = priceMin ? Number(priceMin) : null;
     const max = priceMax ? Number(priceMax) : null;
-    let list = motos.filter((p) => {
-      if (activeType && typeSlug(p.type) !== activeType.slug) return false;
-      if (q && !`${p.title || ""} ${p.brand || ""} ${p.color || ""} ${p.model || ""} ${p.type || ""}`.toLowerCase().includes(q)) return false;
-      if (brands.length && !brands.includes((p.brand || "").trim())) return false;
-      if (ccs.length && !ccs.includes(cc(p))) return false;
-      const val = priceValue(p.price);
+    let list = motos.filter((m) => {
+      if (activeType && typeSlug(m.type) !== activeType.slug) return false;
+      if (q && !`${m.title || ""} ${m.brand || ""} ${modelColors(m).map((c) => c.name).join(" ")} ${m.model || ""} ${m.type || ""}`.toLowerCase().includes(q)) return false;
+      if (brands.length && !brands.includes((m.brand || "").trim())) return false;
+      if (ccs.length && !ccs.includes(modelCc(m))) return false;
+      const val = modelPriceValue(m);
       if (min != null && (val == null || val < min)) return false;
       if (max != null && (val == null || val > max)) return false;
-      if (stockOnly && !inStock(p)) return false;
+      if (stockOnly && !modelInStock(m)) return false;
       return true;
     });
-    if (sort === "price-asc") list = [...list].sort((a, b) => (priceValue(a.price) ?? Infinity) - (priceValue(b.price) ?? Infinity));
-    else if (sort === "price-desc") list = [...list].sort((a, b) => (priceValue(b.price) || 0) - (priceValue(a.price) || 0));
+    if (sort === "price-asc") list = [...list].sort((a, b) => (modelPriceValue(a) ?? Infinity) - (modelPriceValue(b) ?? Infinity));
+    else if (sort === "price-desc") list = [...list].sort((a, b) => (modelPriceValue(b) || 0) - (modelPriceValue(a) || 0));
     else if (sort === "name") list = [...list].sort((a, b) => (a.title || "").localeCompare(b.title || "", "es"));
-    else list = [...list].sort((a, b) => (inStock(b) ? 1 : 0) - (inStock(a) ? 1 : 0));
+    else list = [...list].sort((a, b) => (modelInStock(b) ? 1 : 0) - (modelInStock(a) ? 1 : 0));
     return list;
   }, [motos, activeType, query, brands, ccs, priceMin, priceMax, stockOnly, sort]);
 
@@ -533,7 +529,7 @@ export default function Motos() {
             </div>
           ) : (
             <>
-              <div className="mgrid">{shown.map((p) => <ProductCard key={p.id} product={p} />)}</div>
+              <div className="mgrid">{shown.map((m) => <ModelCard key={m.slug} model={m} />)}</div>
               {visible < filtered.length && (
                 <div className="mmore-btn">
                   <button className="btn btn-secondary" onClick={() => setVisible((v) => v + PAGE)}>

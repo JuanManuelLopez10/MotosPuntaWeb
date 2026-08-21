@@ -4,7 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowLeft, ChevronRight, MessageCircle, ShoppingCart, Percent, CalendarClock,
   Check, Gauge, Zap, ShieldCheck, ArrowDownUp, Waves, Navigation, Cog, Fuel, Wrench, Sun,
-  Minus, Plus, Flame, Armchair, SlidersHorizontal, Droplets, Glasses,
+  Minus, Plus, Flame, Armchair, SlidersHorizontal, Droplets, Glasses, Wind, Thermometer,
 } from "lucide-react";
 import PageTransition from "../components/PageTransition";
 import Loader from "../components/Loader";
@@ -16,6 +16,8 @@ import {
 } from "../lib/catalog";
 import { useSeo, SITE_URL } from "../lib/seo";
 import { useCart } from "../lib/cart.jsx";
+import { fetchModel } from "../lib/models";
+import ModelPage from "./ModelPage";
 import "./Producto.css";
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -111,6 +113,29 @@ const CASCO_HOMOLOGATIONS = [
   { key: "dobleVisor", label: "Doble visor", icon: Glasses },
 ];
 
+// --- Guantes (indumentaria, type "Guantes") ---
+const GUANTES_SPECS = [
+  ["clima", "Clima"],
+  ["proteccionNudillos", "Protección nudillos"],
+  ["largoGuante", "Largo"],
+];
+const GUANTES_FEATURES = [
+  { key: "proteccionDedos", label: "Protección en dedos", icon: ShieldCheck },
+  { key: "proteccionPalma", label: "Protección en palma", icon: ShieldCheck },
+  { key: "limpiavisor", label: "Limpiavisor", icon: Droplets },
+];
+
+// --- Camperas (indumentaria, type "Camperas") ---
+const CAMPERA_SPECS = [
+  ["largoCampera", "Largo"],
+  ["genero", "Género"],
+];
+const CAMPERA_FEATURES = [
+  { key: "abrigoExtraible", label: "Abrigo interior extraíble", icon: Thermometer },
+  { key: "entradasAire", label: "Entradas de aire", icon: Wind },
+  { key: "camperaVerano", label: "Campera de verano", icon: Sun },
+];
+
 const truthyBool = (v) => v === true || v === "true" || v === 1 || v === "1";
 const specText = (val, unit) => {
   const s = String(val ?? "").trim();
@@ -142,7 +167,24 @@ function CountUp({ value, unit }) {
   return <>{shown}{unit ? <span className="pd__statUnit"> {unit}</span> : null}</>;
 }
 
+// Dispatcher (Fase 2): intenta cargar el MODELO por slug (/api/producto/{slug}); si existe,
+// muestra la página nueva por modelo. Si no (links viejos con id de variante), cae a la
+// página plana de siempre. Así conviven las dos durante la transición.
 export default function Producto() {
+  const { id } = useParams();
+  const [model, setModel] = useState(undefined); // undefined = cargando, null = no es modelo
+  useEffect(() => {
+    let alive = true;
+    setModel(undefined);
+    fetchModel(id).then((m) => alive && setModel(m || null)).catch(() => alive && setModel(null));
+    return () => { alive = false; };
+  }, [id]);
+  if (model === undefined) return <Loader show />;
+  if (model) return <ModelPage model={model} />;
+  return <ProductoFlat />;
+}
+
+function ProductoFlat() {
   const { id } = useParams();
   const [products, setProducts] = useState(null);
   const [error, setError] = useState(null);
@@ -247,6 +289,14 @@ export default function Producto() {
     : [];
   const cascoFeatures = casco ? CASCO_HOMOLOGATIONS.filter((f) => truthyBool(product[f.key])) : [];
   const sharpStars = casco ? Math.min(5, Math.round(Number(String(product.estrellasSharp || "").replace(/[^\d]/g, "")) || 0)) : 0;
+  // Indumentaria: guantes y camperas tienen ficha propia según el type.
+  const indumentaria = String(product.productType || "").toLowerCase() === "indumentaria";
+  const guante = indumentaria && String(product.type || "").toLowerCase() === "guantes";
+  const campera = indumentaria && String(product.type || "").toLowerCase() === "camperas";
+  const apparelSpecList = guante ? GUANTES_SPECS : campera ? CAMPERA_SPECS : [];
+  const apparelFeatureList = guante ? GUANTES_FEATURES : campera ? CAMPERA_FEATURES : [];
+  const apparelSpecs = apparelSpecList.map(([k, label, unit]) => ({ label, value: specText(product[k], unit) })).filter((r) => r.value);
+  const apparelFeatures = apparelFeatureList.filter((f) => truthyBool(product[f.key]));
   // Especificaciones extra puntuales (mapa nombre → valor cargado por producto en la app).
   const customSpecs = product.customSpecs && typeof product.customSpecs === "object" && !Array.isArray(product.customSpecs)
     ? Object.entries(product.customSpecs).filter(([k, v]) => String(k).trim() && String(v ?? "").trim())
@@ -481,6 +531,35 @@ export default function Producto() {
               <Reveal><h2 className="pd__secTitle"><ShieldCheck size={22} /> Homologaciones y equipamiento</h2></Reveal>
               <div className="pd__featGrid">
                 {cascoFeatures.map((f, i) => (
+                  <Reveal key={f.key} delay={i * 0.05} className="pd__feat">
+                    <f.icon size={22} />
+                    <span>{f.label}</span>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Especificaciones (guantes / camperas) */}
+          {apparelSpecs.length > 0 && (
+            <div className="pd__section">
+              <Reveal><h2 className="pd__secTitle"><Gauge size={22} /> Especificaciones</h2></Reveal>
+              <div className="pd__specGroups">
+                <Reveal className="pd__specGroup">
+                  <dl className="pd__specs">
+                    {apparelSpecs.map((r) => (<div key={r.label} className="pd__spec"><dt>{r.label}</dt><dd>{r.value}</dd></div>))}
+                  </dl>
+                </Reveal>
+              </div>
+            </div>
+          )}
+
+          {/* Equipamiento (guantes / camperas) */}
+          {apparelFeatures.length > 0 && (
+            <div className="pd__section">
+              <Reveal><h2 className="pd__secTitle"><ShieldCheck size={22} /> Equipamiento</h2></Reveal>
+              <div className="pd__featGrid">
+                {apparelFeatures.map((f, i) => (
                   <Reveal key={f.key} delay={i * 0.05} className="pd__feat">
                     <f.icon size={22} />
                     <span>{f.label}</span>

@@ -5,7 +5,7 @@ import { Check, X, Info, MessageCircle, ArrowRight, ShieldCheck, ClipboardCheck,
 import PageTransition from "../components/PageTransition";
 import { FINANCING, ELIGIBILITY_QUESTIONS, evaluate } from "../data/financing";
 import { waLink } from "../data/site";
-import { fetchProducts, formatPrice, productFullName } from "../lib/catalog";
+import { fetchModel, modelPrice } from "../lib/models";
 import { submitLead } from "../lib/leads";
 import { useSeo } from "../lib/seo";
 import "./Financiacion.css";
@@ -39,12 +39,12 @@ export default function Financiacion() {
   useEffect(() => {
     if (!motoId) return;
     let alive = true;
-    fetchProducts().then((list) => { if (alive) setMoto(list.find((p) => p.id === motoId) || null); }).catch(() => {});
+    fetchModel(motoId).then((m) => { if (alive) setMoto(m || null); }).catch(() => { if (alive) setMoto(null); });
     return () => { alive = false; };
   }, [motoId]);
 
-  const motoName = moto ? productFullName(moto) : "";
-  const motoPrice = moto ? formatPrice(moto.price) : "";
+  const motoName = moto ? moto.title : "";
+  const motoPrice = moto ? modelPrice(moto) : "";
   const setAnswer = (key, val) => setAnswers((a) => ({ ...a, [key]: val }));
 
   const results = useMemo(() => FINANCING.map((f) => ({ f, ...evaluate(f, answers) })), [answers]);

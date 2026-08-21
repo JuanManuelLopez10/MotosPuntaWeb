@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 import { Tag, ArrowRight } from "lucide-react";
 import PageTransition from "../components/PageTransition";
 import Loader from "../components/Loader";
-import ProductCard from "../components/ProductCard";
-import { fetchProducts, isOutlet, formatPrice, isMoto, inStock } from "../lib/catalog";
+import ModelCard from "../components/ModelCard";
+import { fetchModels, modelOutlet, modelPriceValue, isMotoModel, modelInStock } from "../lib/models";
 import { useSeo } from "../lib/seo";
 import "./Outlet.css";
 
@@ -24,12 +24,12 @@ export default function Outlet() {
 
   useEffect(() => {
     let alive = true;
-    fetchProducts().then((p) => alive && setProducts(p)).catch((e) => alive && setError(e.message));
+    fetchModels().then((m) => alive && setProducts(m)).catch((e) => alive && setError(e.message));
     return () => { alive = false; };
   }, []);
 
   const items = useMemo(
-    () => (products || []).filter((p) => isOutlet(p) && formatPrice(p.price) && (isMoto(p) || inStock(p))),
+    () => (products || []).filter((m) => modelOutlet(m) && modelPriceValue(m) != null && (isMotoModel(m) || modelInStock(m))),
     [products],
   );
 
@@ -70,7 +70,7 @@ export default function Outlet() {
               <>
                 <p className="cat__count">{items.length} oferta{items.length !== 1 ? "s" : ""}</p>
                 <div className="cat__grid">
-                  {items.map((p) => <ProductCard key={p.id} product={p} />)}
+                  {items.map((m) => <ModelCard key={m.slug} model={m} />)}
                 </div>
               </>
             )

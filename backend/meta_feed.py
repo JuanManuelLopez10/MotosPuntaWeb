@@ -191,3 +191,72 @@ def build_feed_csv(products, **kw):
     for r in build_feed_rows(products, **kw):
         w.writerow(r)
     return buf.getvalue()
+
+
+# ---------------------------------------------------------------------------
+# Feed desde la colección anidada 'productos' (ver productos_reader.read_productos).
+# Cada modelo trae 'variants'; cada variante = un color. El link apunta a la página
+# del MODELO (/producto/{slug}); el item_group_id conserva el id viejo (legacyId) para
+# no cambiar los ids del feed.
+# ---------------------------------------------------------------------------
+def _productos_variant_rows(model, v, missing_r2):
+    price = _price(v.get("price"))
+    if not price:
+        return []  # Meta exige precio
+    image = (v.get("image") or "").strip()
+    if not image or image in missing_r2:
+        return []  # sin foto (o foto de R2 aún no subida)
+    group_id = _clean(v.get("legacyId") or v.get("id"))
+    slug = _clean(model.get("slug"))
+    title = _clean(model.get("title"))
+    desc = _clean(model.get("description")) or title
+    color = _clean(v.get("colorName"))
+    acabado = _clean(v.get("acabado"))
+    color_label = f"{color} {acabado}".strip() if acabado else color
+    common = {
+        "title": title, "description": desc, "condition": "new",
+        "price": price, "image_link": image,
+        "link": f"{SITE}/producto/{quote(slug)}" if slug else SITE,
+        "brand": _clean(model.get("brand")),
+        "item_group_id": group_id,
+        "color": color_label,
+        "product_type": _clean(model.get("productType")),
+    }
+    sizes_map = v.get("sizes") or {}
+    offered = [label for key, label in _SIZES if _truthy(sizes_map.get(key))]
+    if offered:
+        rows = []
+        for sz in offered:
+            r = dict(common); r["id"] = f"{group_id}-{sz}"; r["size"] = sz
+            r["availability"] = "in stock"
+            rows.append(r)
+        return rows
+    r = dict(common); r["id"] = group_id; r["size"] = ""
+    r["availability"] = "in stock" if str(v.get("availability", "")).strip().lower() == "in stock" else "out of stock"
+    return [r]
+
+
+def build_feed_rows_from_productos(models, only_in_stock=False, require_image=True):
+    imgs = [{"imageLink": (v.get("image") or "").strip()}
+            for m in models for v in m.get("variants", []) if (v.get("image") or "").strip()]
+    missing = _missing_r2_images(imgs) if require_image else set()
+    rows, seen = [], set()
+    for m in models:
+        for v in m.get("variants", []):
+            for r in _productos_variant_rows(m, v, missing):
+                if only_in_stock and r["availability"] != "in stock":
+                    continue
+                if r["id"] in seen:
+                    continue
+                seen.add(r["id"])
+                rows.append(r)
+    return rows
+
+
+def build_feed_csv_from_productos(models, **kw):
+    buf = io.StringIO()
+    w = csv.DictWriter(buf, fieldnames=FEED_COLUMNS)
+    w.writeheader()
+    for r in build_feed_rows_from_productos(models, **kw):
+        w.writerow(r)
+    return buf.getvalue()

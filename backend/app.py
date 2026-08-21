@@ -5,7 +5,8 @@ from google.oauth2 import service_account
 import os
 from flask import Flask, request, jsonify, send_from_directory, Response
 from whatsapp_bot import send_message
-from meta_feed import build_feed_csv
+from meta_feed import build_feed_csv, build_feed_csv_from_productos
+from productos_reader import read_productos, read_model
 import mercadopago
 import requests
 import time
@@ -91,6 +92,10 @@ productos = []
 _productos_ts = 0.0
 PRODUCTS_TTL = 60  # segundos: el catálogo en memoria se refresca desde Firestore como máximo 1 vez por minuto
 filteredProducts = []
+
+# Caché del árbol anidado de la colección 'productos' (modelos con variantes), para /api/productos.
+_prod_tree_cache = {"data": None, "ts": 0.0}
+PRODUCTOS_TREE_TTL = 60
 filters = {"type":"", "brand": "", "color": "", "size": "", "MinPrice": "", "MaxPrice": ""}
 
 def filterProducts():
@@ -290,6 +295,48 @@ def get_product_by_db(productId):
         return jsonify({"error": str(e)}), 500
 
 
+# --- Colección anidada 'productos' (modelo → diseño/colores → variante). Endpoints NUEVOS
+#     que conviven con /api/products; los alimenta la web nueva (catálogo por modelo + SEO). ---
+@app.route("/api/productos")
+def get_productos_tree():
+    if db is None:
+        return jsonify({"error": "Base de datos no disponible"}), 503
+    now = time.time()
+    hard = "no-cache" in (
+        request.headers.get("Cache-Control", "") + " " + request.headers.get("Pragma", "")
+    ).lower()
+    if hard or _prod_tree_cache["data"] is None or (now - _prod_tree_cache["ts"]) >= PRODUCTOS_TREE_TTL:
+        _prod_tree_cache["data"] = read_productos(db)
+        _prod_tree_cache["ts"] = now
+        print("Productos: por db")
+    else:
+        print("Productos: por cache")
+    return jsonify(_prod_tree_cache["data"])
+
+
+@app.route("/api/producto/<slug>")
+def get_producto_model(slug):
+    if db is None:
+        return jsonify({"error": "Base de datos no disponible"}), 503
+    m = read_model(db, slug)
+    if m is None:
+        return jsonify({"error": "Producto no encontrado"}), 404
+    return jsonify(m)
+
+
+@app.route("/meta-feed-productos.csv")
+def meta_feed_productos_csv():
+    """Feed de Meta desde la colección 'productos' (nuevo). Convive con /meta-feed.csv; el
+    catálogo de Meta se apunta a este recién en el cutover. Lee fresco para tener el stock al día."""
+    if db is None:
+        return Response("Firestore no inicializado", status=503, mimetype="text/plain")
+    return Response(
+        build_feed_csv_from_productos(read_productos(db)),
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition": "inline; filename=meta-feed-productos.csv"},
+    )
+
+
 @app.route("/api/filteredProducts")
 def get_filteredProducts():
     global filteredProducts
@@ -365,13 +412,28 @@ def _price_usd(prod):
 
 
 def _fetch_product(pid):
-    """Lee un producto FRESCO de Firestore (no la caché) para validar precio y stock."""
-    doc = db.collection("products").document(pid).get()
-    if not doc.exists:
+    """Lee una VARIANTE fresca de `productos` por su dirección 'modelSlug|design|variantId'.
+    Devuelve lo que la orden necesita: tipo/título del modelo + precio/stock/color de la variante."""
+    parts = str(pid or "").split("|")
+    if len(parts) != 3:
         return None
-    d = doc.to_dict()
-    d["id"] = doc.id
-    return d
+    model_slug, design, variant_id = parts
+    design = design or "colores"
+    vsnap = db.collection("productos").document(model_slug).collection(design).document(variant_id).get()
+    if not vsnap.exists:
+        return None
+    v = vsnap.to_dict() or {}
+    msnap = db.collection("productos").document(model_slug).get()
+    m = (msnap.to_dict() or {}) if msnap.exists else {}
+    return {
+        "id": pid,
+        "productType": m.get("productType", ""),
+        "title": m.get("title", ""),
+        "availability": v.get("availability", ""),
+        "price": v.get("price", ""),
+        "color": v.get("colorName", ""),
+        "acabado": v.get("acabado", ""),
+    }
 
 
 def _notify_shop(message):

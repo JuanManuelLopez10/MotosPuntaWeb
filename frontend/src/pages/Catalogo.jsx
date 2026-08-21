@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import PageTransition from "../components/PageTransition";
 import Loader from "../components/Loader";
-import ProductCard from "../components/ProductCard";
-import { fetchProducts, inStock, formatPrice, priceValue, availableSizes, SIZE_ORDER } from "../lib/catalog";
+import ModelCard from "../components/ModelCard";
+import { SIZE_ORDER } from "../lib/catalog";
+import { fetchModels, modelInStock, modelPriceValue, modelColors, modelSizes } from "../lib/models";
 import { CATALOG_CATEGORIES } from "../data/site";
 import { useSeo } from "../lib/seo";
 import "./Catalogo.css";
@@ -99,7 +100,7 @@ export default function Catalogo() {
 
   useEffect(() => {
     let alive = true;
-    fetchProducts().then((p) => alive && setProducts(p)).catch((e) => alive && setError(e.message));
+    fetchModels().then((m) => alive && setProducts(m)).catch((e) => alive && setError(e.message));
     return () => { alive = false; };
   }, []);
 
@@ -126,12 +127,12 @@ export default function Catalogo() {
   useEffect(() => { setVisible(PAGE); }, [active, query, types, colors, sizes, brands, priceMin, priceMax, stockOnly, sort]);
 
   const inCategory = useMemo(() => {
-    if (!products) return [];
+    if (!products) return [];   // `products` sostiene los MODELOS
     return products
-      .filter((p) => (p.productType || "").toLowerCase() !== "motos")
-      .filter((p) => active === "todos" || (p.productType || "").toLowerCase() === active)
-      .filter((p) => formatPrice(p.price))
-      .filter((p) => inStock(p));   // en el catálogo (todo no-moto) se ocultan los agotados
+      .filter((m) => (m.productType || "").toLowerCase() !== "motos")
+      .filter((m) => active === "todos" || (m.productType || "").toLowerCase() === active)
+      .filter((m) => modelPriceValue(m) != null)
+      .filter((m) => modelInStock(m));   // en el catálogo (todo no-moto) se ocultan los agotados
   }, [products, active]);
 
   // Facetado: la lista final y las opciones de cada filtro se calculan juntas. Cada
@@ -143,40 +144,35 @@ export default function Catalogo() {
     const min = priceMin ? Number(priceMin) : null;
     const max = priceMax ? Number(priceMax) : null;
 
-    const match = (p, skip) => {
-      if (q && !`${p.title || ""} ${p.brand || ""} ${p.color || ""} ${p.model || ""} ${p.pattern || ""}`.toLowerCase().includes(q)) return false;
-      if (skip !== "type" && types.length && !types.includes((p.type || "").trim())) return false;
-      if (skip !== "color" && colors.length && !colors.includes((p.color || "").trim())) return false;
-      if (skip !== "size" && sizes.length && !availableSizes(p).some((s) => sizes.includes(s))) return false;
-      if (skip !== "brand" && brands.length && !brands.includes((p.brand || "").trim())) return false;
-      const val = priceValue(p.price);
+    const match = (m, skip) => {
+      const hay = `${m.title || ""} ${m.brand || ""} ${m.model || ""} ${modelColors(m).map((c) => c.name).join(" ")}`.toLowerCase();
+      if (q && !hay.includes(q)) return false;
+      if (skip !== "type" && types.length && !types.includes((m.type || "").trim())) return false;
+      if (skip !== "color" && colors.length && !modelColors(m).some((c) => colors.includes(c.name))) return false;
+      if (skip !== "size" && sizes.length && !modelSizes(m).some((s) => sizes.includes(s))) return false;
+      if (skip !== "brand" && brands.length && !brands.includes((m.brand || "").trim())) return false;
+      const val = modelPriceValue(m);
       if (skip !== "price" && min != null && (val == null || val < min)) return false;
       if (skip !== "price" && max != null && (val == null || val > max)) return false;
-      if (skip !== "stock" && stockOnly && !inStock(p)) return false;
       return true;
     };
 
-    const optSet = (skip, getVal, keep) => {
-      const set = new Set(inCategory.filter((p) => match(p, skip)).map(getVal).filter(Boolean));
+    const optSet = (skip, getVals, keep) => {
+      const set = new Set();
+      inCategory.filter((m) => match(m, skip)).forEach((m) => getVals(m).forEach((v) => v && set.add(v)));
       keep.forEach((v) => set.add(v)); // mantener lo ya elegido visible
       return set;
     };
 
-    const typeSet = optSet("type", (p) => (p.type || "").trim(), types);
-    const colorSet = optSet("color", (p) => (p.color || "").trim(), colors);
-    const brandSet = optSet("brand", (p) => (p.brand || "").trim(), brands);
-    const sizeSet = (() => {
-      const s = new Set();
-      inCategory.filter((p) => match(p, "size")).forEach((p) => availableSizes(p).forEach((x) => s.add(x)));
-      sizes.forEach((v) => s.add(v)); // mantener lo ya elegido visible
-      return s;
-    })();
+    const typeSet = optSet("type", (m) => [(m.type || "").trim()], types);
+    const colorSet = optSet("color", (m) => modelColors(m).map((c) => c.name), colors);
+    const brandSet = optSet("brand", (m) => [(m.brand || "").trim()], brands);
+    const sizeSet = optSet("size", (m) => modelSizes(m), sizes);
 
-    let list = inCategory.filter((p) => match(p, null));
-    if (sort === "price-asc") list = [...list].sort((a, b) => (priceValue(a.price) || 0) - (priceValue(b.price) || 0));
-    else if (sort === "price-desc") list = [...list].sort((a, b) => (priceValue(b.price) || 0) - (priceValue(a.price) || 0));
+    let list = inCategory.filter((m) => match(m, null));
+    if (sort === "price-asc") list = [...list].sort((a, b) => (modelPriceValue(a) || 0) - (modelPriceValue(b) || 0));
+    else if (sort === "price-desc") list = [...list].sort((a, b) => (modelPriceValue(b) || 0) - (modelPriceValue(a) || 0));
     else if (sort === "name") list = [...list].sort((a, b) => (a.title || "").localeCompare(b.title || "", "es"));
-    else list = [...list].sort((a, b) => (inStock(b) ? 1 : 0) - (inStock(a) ? 1 : 0));
 
     return {
       filtered: list,
@@ -297,7 +293,7 @@ export default function Catalogo() {
                   <p className="cat__msg">No encontramos productos con ese criterio.</p>
                 ) : (
                   <>
-                    <div className="cat__grid">{shown.map((p) => <ProductCard key={p.id} product={p} />)}</div>
+                    <div className="cat__grid">{shown.map((m) => <ModelCard key={m.slug} model={m} />)}</div>
                     {visible < filtered.length && (
                       <div className="cat__more">
                         <button className="btn btn-secondary" onClick={() => setVisible((v) => v + PAGE)}>

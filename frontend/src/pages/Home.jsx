@@ -4,10 +4,10 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Calculator, ChevronRight } from "lucide-react";
 import PageTransition from "../components/PageTransition";
 import Loader from "../components/Loader";
-import ProductCard from "../components/ProductCard";
+import ModelCard from "../components/ModelCard";
 import Marquee from "../components/Marquee";
 import { CATEGORIES, waLink, HERO_MEDIA } from "../data/site";
-import { fetchProducts, formatPrice, inStock } from "../lib/catalog";
+import { fetchModels, modelImage, modelPrice, modelInStock, isMotoModel } from "../lib/models";
 import { useSeo } from "../lib/seo";
 import "./Home.css";
 
@@ -70,28 +70,25 @@ export default function Home() {
 
   useEffect(() => {
     let alive = true;
-    fetchProducts().then((p) => alive && setProducts(p)).catch(() => {});
+    fetchModels().then((m) => alive && setProducts(m)).catch(() => {});
     return () => { alive = false; };
   }, []);
 
   const featured = useMemo(() => {
     if (!products) return [];
-    const withImg = products.filter((p) => (p.imageLink || "").trim() && formatPrice(p.price) && inStock(p));
-    const motos = withImg.filter((p) => (p.productType || "").toLowerCase() === "motos");
-    const rest = withImg.filter((p) => (p.productType || "").toLowerCase() !== "motos");
+    const ok = products.filter((m) => modelPrice(m) && modelInStock(m));
+    const motos = ok.filter(isMotoModel);
+    const rest = ok.filter((m) => !isMotoModel(m));
     return [...motos, ...rest].slice(0, 8);
   }, [products]);
 
   const categoryImages = useMemo(() => {
     if (!products) return {};
-
     return Object.fromEntries(
       CATEGORIES.map(({ key }) => {
-        const categoryProducts = products.filter(
-          (item) => (item.productType || "").toLowerCase() === key && (item.imageLink || "").trim(),
-        );
-        const product = categoryProducts.find((item) => /rojo|red/i.test(item.color || "")) ?? categoryProducts[0];
-        return [key, product?.imageLink];
+        const cat = products.filter((m) => (m.productType || "").toLowerCase() === key);
+        const m = cat.find((x) => modelInStock(x)) ?? cat[0];
+        return [key, m ? modelImage(m) : undefined];
       }),
     );
   }, [products]);
@@ -189,9 +186,9 @@ export default function Home() {
             viewport={{ once: true, margin: "-80px" }}
             variants={{ show: { transition: { staggerChildren: 0.07 } } }}
           >
-            {featured.map((p) => (
-              <motion.div key={p.id} variants={{ hidden: { opacity: 0, y: 28 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } } }}>
-                <ProductCard product={p} />
+            {featured.map((m) => (
+              <motion.div key={m.slug} variants={{ hidden: { opacity: 0, y: 28 }, show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } } }}>
+                <ModelCard model={m} />
               </motion.div>
             ))}
           </motion.div>
