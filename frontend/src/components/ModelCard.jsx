@@ -1,30 +1,37 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import {
-  modelImage, modelPrice, modelPriceFrom, modelSubtitle, modelColors, modelOutlet, modelInStock,
+  modelImage, modelPrice, modelPriceFrom, modelSubtitle, modelOutlet, modelInStock, colorSwatches,
 } from "../lib/models";
 import { PRODUCT_PLACEHOLDER } from "../lib/catalog";
 import "./ProductCard.css";
 
-// Tarjeta del CATÁLOGO por MODELO (Fase 2). El detalle de color/diseño vive en la página
-// del modelo (/producto/{slug}).
+// Tarjeta del CATÁLOGO. En cascos, `model` viene acotado a un DISEÑO (Modelo+Diseño), así que
+// muestra "MT Stinger 2 · Bunch"; en el resto es el modelo entero. Al pasar el cursor por un
+// círculo de color, la imagen cambia a la de ese color.
 export default function ModelCard({ model }) {
+  const design = model.design || null;
   const img = modelImage(model);
   const price = modelPrice(model);
   const from = modelPriceFrom(model);
   const sub = modelSubtitle(model);
-  const colors = modelColors(model).slice(0, 6);
-  const extra = modelColors(model).length - colors.length;
   const outlet = modelOutlet(model);
   const soldOut = !modelInStock(model);
-  const to = `/producto/${encodeURIComponent(model.slug)}`;
+  // En el catálogo solo se ofrecen colores con stock (los agotados no se muestran).
+  const swatches = colorSwatches(model).filter((c) => !c.soldOut && c.image).slice(0, 6);
+  const extra = colorSwatches(model).filter((c) => !c.soldOut && c.image).length - swatches.length;
+  const to = `/producto/${encodeURIComponent(model.slug)}${design ? `/${encodeURIComponent(design)}` : ""}`;
+
+  // Imagen que se muestra: la del color en hover (si hay), o la representativa.
+  const [hoverImg, setHoverImg] = useState(null);
 
   return (
     <article className={`pcard ${outlet ? "pcard--outlet" : ""} ${soldOut ? "pcard--out" : ""}`}>
-      <Link to={to} className="pcard__media" aria-label={model.title}>
+      <Link to={to} className="pcard__media" aria-label={model.displayName || model.title}>
         <img
-          src={img}
-          alt={model.title}
+          src={hoverImg || img}
+          alt={model.displayName || model.title}
           loading="lazy"
           className={soldOut ? "is-out" : ""}
           onError={(e) => {
@@ -40,22 +47,24 @@ export default function ModelCard({ model }) {
       <div className="pcard__body">
         <h3 className="pcard__title">
           <Link to={to} className="pcard__titleLink">{model.title}</Link>
+          {design && <span className="pcard__pattern"> {model.designLabel}</span>}
         </h3>
         {sub && <p className="pcard__sub">{sub}</p>}
 
-        {colors.length > 1 && (
-          <div style={{ display: "flex", alignItems: "center", gap: 6, margin: "2px 0 6px" }}>
-            {colors.map((c) => (
+        {swatches.length > 1 && (
+          <div className="pcard__swatches" role="list" aria-label="Colores disponibles">
+            {swatches.map((c) => (
               <span
                 key={c.name}
-                title={c.name}
-                style={{
-                  width: 14, height: 14, borderRadius: "50%", background: c.hex,
-                  boxShadow: "inset 0 0 0 1px rgba(0,0,0,.15)", flex: "none",
-                }}
+                role="listitem"
+                className="pcard__swatch"
+                title={[c.name, c.acabado].filter(Boolean).join(" ")}
+                style={{ background: c.hex }}
+                onMouseEnter={() => setHoverImg(c.image)}
+                onMouseLeave={() => setHoverImg(null)}
               />
             ))}
-            {extra > 0 && <span style={{ fontSize: 12, color: "var(--muted, #8a8a90)" }}>+{extra}</span>}
+            {extra > 0 && <span className="pcard__swatchMore">+{extra}</span>}
           </div>
         )}
 

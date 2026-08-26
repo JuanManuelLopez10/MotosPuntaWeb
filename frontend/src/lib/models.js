@@ -88,6 +88,75 @@ export function modelDesigns(m) {
   return [...seen];
 }
 
+// Diseños que tienen al menos una variante en stock.
+export function modelDesignsInStock(m) {
+  const seen = new Set();
+  for (const v of variants(m)) {
+    if (v.design && variantInStock(v)) seen.add(v.design);
+  }
+  return [...seen];
+}
+
+// Etiqueta legible de un diseño ("bunch" -> "Bunch", "sr-2" -> "Sr 2").
+export function designLabel(d) {
+  return String(d || "").replace(/-/g, " ").replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+}
+
+// Variantes de un diseño concreto del modelo.
+export function designVariants(m, design) {
+  return variants(m).filter((v) => v.design === design);
+}
+
+// Colores del modelo (o del diseño, si `m.variants` ya viene acotado) con imagen y stock.
+// Un color puede repetirse entre variantes; se prefiere la imagen de la variante en stock.
+export function colorSwatches(m) {
+  const seen = new Map();
+  for (const v of variants(m)) {
+    const name = (v.colorName || "").trim();
+    if (!name) continue;
+    const key = name.toLowerCase();
+    const inS = variantInStock(v);
+    const hex = (v.color || "").startsWith("#") ? v.color : colorHex(v.colorName);
+    if (!seen.has(key)) {
+      seen.set(key, { name, acabado: v.acabado || "", hex, image: (v.image || "").trim(), soldOut: !inS });
+    } else if (inS && seen.get(key).soldOut) {
+      const e = seen.get(key);
+      e.image = (v.image || "").trim() || e.image;
+      e.soldOut = false;
+      e.acabado = v.acabado || e.acabado;
+    }
+  }
+  return [...seen.values()];
+}
+
+// Entradas de CATÁLOGO: un casco se separa por DISEÑO (Modelo+Diseño, ej. "MT Stinger 2
+// Bunch"); el resto (indumentaria/accesorios) queda como un solo modelo. Solo se incluyen
+// diseños/modelos con al menos una variante EN STOCK (los agotados no aparecen).
+// Cada entrada es un modelo "acotado": conserva todo pero con `variants` filtradas al diseño,
+// así los helpers modelImage/modelPrice/modelColors/… siguen funcionando tal cual.
+export function catalogEntries(models) {
+  const out = [];
+  for (const m of models || []) {
+    const casco = String(m.productType || "").toLowerCase() === "cascos";
+    const designs = casco ? modelDesignsInStock(m) : [];
+    if (designs.length) {
+      for (const d of designs) {
+        out.push({
+          ...m,
+          variants: designVariants(m, d),
+          design: d,
+          designLabel: designLabel(d),
+          entryKey: `${m.slug}|${d}`,
+          displayName: `${m.title} ${designLabel(d)}`.trim(),
+        });
+      }
+    } else if (modelInStock(m)) {
+      out.push({ ...m, design: null, designLabel: "", entryKey: m.slug, displayName: m.title });
+    }
+  }
+  return out;
+}
+
 export function modelOutlet(m) {
   return variants(m).some((v) => v.outlet === true || v.outlet === "true" || v.outlet === 1);
 }

@@ -6,7 +6,7 @@ import PageTransition from "../components/PageTransition";
 import Loader from "../components/Loader";
 import ModelCard from "../components/ModelCard";
 import { SIZE_ORDER } from "../lib/catalog";
-import { fetchModels, modelInStock, modelPriceValue, modelColors, modelSizes } from "../lib/models";
+import { fetchModels, modelPriceValue, modelColors, modelSizes, catalogEntries } from "../lib/models";
 import { CATALOG_CATEGORIES } from "../data/site";
 import { useSeo } from "../lib/seo";
 import "./Catalogo.css";
@@ -128,11 +128,12 @@ export default function Catalogo() {
 
   const inCategory = useMemo(() => {
     if (!products) return [];   // `products` sostiene los MODELOS
-    return products
+    const nonMoto = products
       .filter((m) => (m.productType || "").toLowerCase() !== "motos")
-      .filter((m) => active === "todos" || (m.productType || "").toLowerCase() === active)
-      .filter((m) => modelPriceValue(m) != null)
-      .filter((m) => modelInStock(m));   // en el catálogo (todo no-moto) se ocultan los agotados
+      .filter((m) => active === "todos" || (m.productType || "").toLowerCase() === active);
+    // Se separa por Modelo+Diseño (cascos) y se descartan los agotados. Cada entrada es un
+    // modelo acotado a su diseño; los helpers modelColors/modelSizes/… siguen aplicando.
+    return catalogEntries(nonMoto).filter((e) => modelPriceValue(e) != null);
   }, [products, active]);
 
   // Facetado: la lista final y las opciones de cada filtro se calculan juntas. Cada
@@ -145,7 +146,7 @@ export default function Catalogo() {
     const max = priceMax ? Number(priceMax) : null;
 
     const match = (m, skip) => {
-      const hay = `${m.title || ""} ${m.brand || ""} ${m.model || ""} ${modelColors(m).map((c) => c.name).join(" ")}`.toLowerCase();
+      const hay = `${m.displayName || m.title || ""} ${m.brand || ""} ${m.model || ""} ${modelColors(m).map((c) => c.name).join(" ")}`.toLowerCase();
       if (q && !hay.includes(q)) return false;
       if (skip !== "type" && types.length && !types.includes((m.type || "").trim())) return false;
       if (skip !== "color" && colors.length && !modelColors(m).some((c) => colors.includes(c.name))) return false;
@@ -172,7 +173,7 @@ export default function Catalogo() {
     let list = inCategory.filter((m) => match(m, null));
     if (sort === "price-asc") list = [...list].sort((a, b) => (modelPriceValue(a) || 0) - (modelPriceValue(b) || 0));
     else if (sort === "price-desc") list = [...list].sort((a, b) => (modelPriceValue(b) || 0) - (modelPriceValue(a) || 0));
-    else if (sort === "name") list = [...list].sort((a, b) => (a.title || "").localeCompare(b.title || "", "es"));
+    else if (sort === "name") list = [...list].sort((a, b) => (a.displayName || a.title || "").localeCompare(b.displayName || b.title || "", "es"));
 
     return {
       filtered: list,
@@ -293,7 +294,7 @@ export default function Catalogo() {
                   <p className="cat__msg">No encontramos productos con ese criterio.</p>
                 ) : (
                   <>
-                    <div className="cat__grid">{shown.map((m) => <ModelCard key={m.slug} model={m} />)}</div>
+                    <div className="cat__grid">{shown.map((m) => <ModelCard key={m.entryKey || m.slug} model={m} />)}</div>
                     {visible < filtered.length && (
                       <div className="cat__more">
                         <button className="btn btn-secondary" onClick={() => setVisible((v) => v + PAGE)}>

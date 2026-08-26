@@ -32,6 +32,8 @@ export default function App() {
           <Route path="/catalogo" element={<Catalogo />} />
           <Route path="/catalogo/:categoria" element={<Catalogo />} />
           <Route path="/producto/:id" element={<Producto />} />
+          {/* Cascos: Modelo + Diseño (/producto/mt-stinger-2/micro) */}
+          <Route path="/producto/:id/:design" element={<Producto />} />
           {/* Alias: los links del feed de Meta/WhatsApp usan /product/{itemGroupId} */}
           <Route path="/product/:id" element={<Producto />} />
           <Route path="/carrito" element={<Carrito />} />

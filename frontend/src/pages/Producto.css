@@ -17,7 +17,7 @@
 /* HERO */
 .pd__hero { position: relative; overflow: hidden; padding-block: clamp(var(--sp-5), 5vw, var(--sp-7)); }
 .pd__heroGrid { display: grid; grid-template-columns: 1fr 1.05fr; gap: clamp(var(--sp-5), 5vw, var(--sp-8)); align-items: center; }
-.pd__heroInfo { position: relative; z-index: 2; }
+.pd__heroInfo { position: relative; z-index: 2; min-width: 0; }
 .pd__brand { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.9rem; color: var(--accent-bright); font-weight: 600; }
 .pd__title { font-size: clamp(2.2rem, 5.5vw, 4rem); line-height: 0.98; letter-spacing: -0.02em; margin: var(--sp-2) 0 var(--sp-2); text-transform: uppercase; }
 .pd__pattern { font-size: 0.5em; font-weight: 500; color: var(--text-faint); text-transform: none; letter-spacing: 0; }
@@ -202,7 +202,7 @@
 .pd__colorOpt.is-out s { text-decoration-color: var(--text-faint); }
 
 /* Stage: marco cuadrado, contenido y predecible (nunca desborda ni se corta). */
-.pdm__stage { position: relative; z-index: 1; width: 100%; }
+.pdm__stage { position: relative; z-index: 1; width: 100%; min-width: 0; }
 .pdm__frame {
   position: relative;
   aspect-ratio: 1 / 1;
@@ -236,3 +236,49 @@
   color: #fff; border: 1px solid var(--border-strong);
 }
 .pdm__outletBadge { top: var(--sp-4); right: var(--sp-4); left: auto; }
+
+/* Galería: imagen grande + tira de miniaturas (los colores del diseño). */
+.pdm__gallery { display: flex; gap: var(--sp-3); align-items: stretch; }
+.pdm__gallery .pdm__frame { flex: 1 1 auto; min-width: 0; }
+.pdm__thumbs {
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  width: 82px; flex: none; overflow-y: auto; max-height: 100%;
+}
+.pdm__thumb {
+  width: 82px; aspect-ratio: 1 / 1; flex: none; padding: 6px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); overflow: hidden;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.pdm__thumb img { width: 100%; height: 100%; object-fit: contain; }
+.pdm__thumb:hover { border-color: var(--border-strong); }
+.pdm__thumb.is-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.pdm__thumb.is-out img { filter: grayscale(0.6) brightness(0.7); opacity: 0.6; }
+
+@media (max-width: 620px) {
+  .pdm__gallery { flex-direction: column; }
+  /* En móvil las miniaturas fluyen en varias filas (sin scroll horizontal, sin desbordar). */
+  .pdm__thumbs { flex-direction: row; flex-wrap: wrap; width: 100%; max-height: none; overflow: visible; }
+}
+
+/* Row "Otros diseños del mismo modelo" (scroll horizontal). */
+.pd__designs {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(148px, 1fr);
+  gap: var(--sp-4); overflow-x: auto; padding: var(--sp-1) var(--sp-1) var(--sp-3);
+  scroll-snap-type: x proximity;
+}
+.pd__designCard {
+  scroll-snap-align: start; display: flex; flex-direction: column; gap: var(--sp-2);
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: var(--sp-3); color: var(--text);
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.pd__designCard:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: var(--glow); }
+.pd__designImg {
+  aspect-ratio: 1 / 1; border-radius: var(--radius); overflow: hidden; padding: var(--sp-3);
+  display: grid; place-items: center;
+  background: radial-gradient(80% 80% at 50% 35%, rgba(255, 255, 255, 0.05), transparent 70%), var(--surface-2);
+}
+.pd__designImg img { width: 100%; height: 100%; object-fit: contain; }
+.pd__designName { font-family: var(--font-display); font-weight: 600; text-transform: capitalize; }
+.pd__designPrice { color: var(--text-muted); font-size: 0.9rem; }

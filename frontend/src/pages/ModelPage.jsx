@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   MessageCircle, ShoppingCart, CalendarClock, Percent, Gauge, ShieldCheck, Cog, Wrench,
@@ -9,7 +9,9 @@ import {
 import PageTransition from "../components/PageTransition";
 import { waLink, waProductMessage, waBuyMessage, waReserveMessage } from "../data/site";
 import { formatPrice, priceValue, PRODUCT_PLACEHOLDER } from "../lib/catalog";
-import { variants as getVariants, modelDesigns, isMotoModel, colorHex, variantInStock } from "../lib/models";
+import {
+  variants as getVariants, modelDesigns, modelDesignsInStock, designLabel, isMotoModel, colorHex, variantInStock,
+} from "../lib/models";
 import { useSeo } from "../lib/seo";
 import { useCart } from "../lib/cart.jsx";
 import "./Producto.css";
@@ -55,22 +57,33 @@ const CAMPERA_FEATURES = [
 const SIZE_LABEL = { xs: "XS", s: "S", m: "M", l: "L", xl: "XL", xxl: "XXL", "3xl": "3XL" };
 const sizeLabel = (k) => SIZE_LABEL[String(k).toLowerCase()] || (/^\d+$/.test(k) ? k : String(k).toUpperCase());
 const offeredSizes = (v) => Object.entries(v?.sizes || {}).filter(([, on]) => truthy(on)).map(([k]) => sizeLabel(k));
+const onImgErr = (e) => { if (e.currentTarget.src !== window.location.origin + PRODUCT_PLACEHOLDER) e.currentTarget.src = PRODUCT_PLACEHOLDER; };
 
 export default function ModelPage({ model }) {
+  const { design: urlDesign } = useParams();
   const vs = getVariants(model);
   const moto = isMotoModel(model);
   const casco = String(model.productType || "").toLowerCase() === "cascos";
   const cat = String(model.productType || "").toLowerCase();
-  const designs = modelDesigns(model);
 
-  const [design, setDesign] = useState(designs[0] || null);
-  const designVariants = useMemo(
-    () => (casco && design ? vs.filter((v) => v.design === design) : vs),
-    [vs, casco, design],
-  );
-  const [variantId, setVariantId] = useState(designVariants[0]?.id);
-  useEffect(() => { setVariantId(designVariants[0]?.id); }, [design]); // al cambiar diseño, primer color
-  const selected = designVariants.find((v) => v.id === variantId) || designVariants[0] || vs[0] || {};
+  // El diseño viene de la URL (/producto/:slug/:design). Si no es válido, el primero con stock.
+  const allDesigns = modelDesigns(model);
+  const stockDesigns = modelDesignsInStock(model);
+  const design = casco
+    ? (urlDesign && allDesigns.includes(urlDesign) ? urlDesign : (stockDesigns[0] || allDesigns[0] || null))
+    : null;
+
+  // Variantes (colores) del diseño elegido. En no-cascos, todas.
+  const dVariants = useMemo(() => (casco && design ? vs.filter((v) => v.design === design) : vs), [vs, casco, design]);
+
+  const [variantId, setVariantId] = useState(() => (dVariants.find(variantInStock) || dVariants[0])?.id);
+  // Al cambiar de diseño: primer color con stock y subir al inicio (para ver la "primera vista").
+  useEffect(() => {
+    setVariantId((dVariants.find(variantInStock) || dVariants[0])?.id);
+    window.scrollTo(0, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [design, model.slug]);
+  const selected = dVariants.find((v) => v.id === variantId) || dVariants[0] || vs[0] || {};
 
   const price = formatPrice(selected.price);
   const curVal = priceValue(selected.price);
@@ -80,16 +93,16 @@ export default function ModelPage({ model }) {
   const soldOut = !variantInStock(selected);
   const sizes = offeredSizes(selected);
   const finish = [selected.colorName, selected.acabado].filter(Boolean).join(" ");
-  const name = [model.title, finish].filter(Boolean).join(" ");
+  const designName = design ? designLabel(design) : "";
+  const name = [model.title, designName, finish].filter(Boolean).join(" ");
 
   useSeo({
-    path: `/producto/${model.slug}`,
-    title: model.seo?.title || model.title,
+    path: `/producto/${model.slug}${design ? `/${design}` : ""}`,
+    title: model.seo?.title || [model.title, designName].filter(Boolean).join(" "),
     description: model.seo?.description || model.description || `${model.title} en Motos Punta, Maldonado.`,
     image: selected.image,
     type: "product",
   });
-  useEffect(() => { window.scrollTo(0, 0); }, [model.slug]);
 
   const specs = model.specs || {};
   const heroStats = moto
@@ -110,14 +123,23 @@ export default function ModelPage({ model }) {
   const customSpecs = selected.customSpecs && typeof selected.customSpecs === "object"
     ? Object.entries(selected.customSpecs).filter(([k, v]) => String(k).trim() && String(v ?? "").trim()) : [];
 
-  const colorList = designVariants.map((v) => ({
+  // Colores del diseño elegido (con marca de agotado). Es lo que se ve "primero".
+  const colorList = dVariants.map((v) => ({
     id: v.id, name: v.colorName, acabado: v.acabado,
     hex: (v.color || "").startsWith("#") ? v.color : colorHex(v.colorName),
-    soldOut: !variantInStock(v),
+    image: v.image, soldOut: !variantInStock(v),
   }));
 
-  // --- Compra (carrito): solo no-motos con stock y precio. El id del carrito es el legacyId
-  //     (id de `products`) para que el backend recalcule el precio como siempre. ---
+  // Otros diseños del mismo modelo (solo con stock), para el row del final.
+  const otherDesigns = casco
+    ? stockDesigns.filter((d) => d !== design).map((d) => {
+        const dv = vs.filter((v) => v.design === d);
+        const rep = dv.find(variantInStock) || dv[0];
+        return { design: d, label: designLabel(d), image: rep?.image || PRODUCT_PLACEHOLDER, price: formatPrice(rep?.price) };
+      })
+    : [];
+
+  // --- Compra (carrito): solo no-motos con stock y precio. ---
   const { addItem } = useCart();
   const [size, setSize] = useState(null);
   const [qty, setQty] = useState(1);
@@ -130,7 +152,7 @@ export default function ModelPage({ model }) {
   const handleAdd = () => {
     if (needsSize && !size) { setSizeError(true); return; }
     addItem({
-      // id = dirección de la variante en `productos` (para que el backend la encuentre y recalcule el precio)
+      // id = dirección de la variante en `productos` (para que el backend recalcule el precio)
       id: [model.slug, selected.design || "colores", selected.id].join("|"),
       title: model.title,
       color: selected.colorName,
@@ -144,7 +166,6 @@ export default function ModelPage({ model }) {
     setTimeout(() => setAdded(false), 2000);
   };
 
-  // Bloque de acciones (idéntico patrón que la ficha plana, con botones grandes .btn).
   const ActionsBlock = moto && soldOut ? (
     <a className="btn btn-primary" href={waLink(waReserveMessage(name))} target="_blank" rel="noreferrer"><CalendarClock size={18} /> Encargar / Reservar</a>
   ) : moto ? (
@@ -167,7 +188,6 @@ export default function ModelPage({ model }) {
     <PageTransition>
       <section className="pd">
         <div className="container">
-          {/* Breadcrumbs (las motos cuelgan de /motos; el resto, del catálogo) */}
           <nav className="pd__crumbs" aria-label="Ruta">
             <Link to="/">Inicio</Link><ChevronRight size={14} />
             {moto ? (
@@ -179,7 +199,7 @@ export default function ModelPage({ model }) {
               </>
             )}
             <ChevronRight size={14} />
-            <span aria-current="page">{model.title}</span>
+            <span aria-current="page">{[model.title, designName].filter(Boolean).join(" ")}</span>
           </nav>
 
           {/* HERO */}
@@ -188,7 +208,9 @@ export default function ModelPage({ model }) {
               {/* Panel de info / compra */}
               <div className="pd__heroInfo">
                 {model.brand && <motion.p className="pd__brand" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ ease: EASE }}>{model.brand}</motion.p>}
-                <motion.h1 className="pd__title" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 0.6, ease: EASE }}>{model.title}</motion.h1>
+                <motion.h1 className="pd__title" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 0.6, ease: EASE }}>
+                  {model.title}{designName && <span className="pd__pattern"> {designName}</span>}
+                </motion.h1>
                 {(moto ? model.type : finish) && <p className="pd__sub">{moto ? model.type : finish}</p>}
 
                 <div className="pd__priceRow">
@@ -202,21 +224,7 @@ export default function ModelPage({ model }) {
                   <span className={`pd__stock ${soldOut ? "is-out" : "is-in"}`}>{soldOut ? "Sin stock" : "En stock"}</span>
                 </div>
 
-                {/* Selector de diseño (cascos) */}
-                {casco && designs.length > 1 && (
-                  <div className="pd__pick">
-                    <span className="pd__buyLabel">Diseño</span>
-                    <div className="pd__sizeOpts">
-                      {designs.map((d) => (
-                        <button key={d} type="button" className={`pd__sizeOpt ${design === d ? "is-on" : ""}`} onClick={() => setDesign(d)}>
-                          {d.replace(/-/g, " ")}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Selector de color */}
+                {/* Colores del diseño elegido */}
                 {colorList.length > 1 && (
                   <div className="pd__pick">
                     <span className="pd__buyLabel">Color</span>
@@ -237,7 +245,7 @@ export default function ModelPage({ model }) {
                   </div>
                 )}
 
-                {/* Talles del color elegido (seleccionables si se puede comprar) */}
+                {/* Talles */}
                 {sizes.length > 0 && (
                   <div className="pd__pick">
                     <span className="pd__buyLabel">
@@ -257,7 +265,6 @@ export default function ModelPage({ model }) {
                   </div>
                 )}
 
-                {/* Cantidad (solo comprable) */}
                 {canBuy && (
                   <div className="pd__pick">
                     <span className="pd__buyLabel">Cantidad</span>
@@ -271,7 +278,6 @@ export default function ModelPage({ model }) {
 
                 <div className="pd__actions">{ActionsBlock}</div>
 
-                {/* Stats destacados (motos) */}
                 {heroStats.length > 0 && (
                   <div className="pd__heroStats">
                     {heroStats.map((s) => (
@@ -284,16 +290,31 @@ export default function ModelPage({ model }) {
                 )}
               </div>
 
-              {/* Stage de la imagen (enmarcado, tamaño contenido) */}
+              {/* Stage: imagen enmarcada + miniaturas de los colores del diseño */}
               <div className="pdm__stage">
-                <div className={`pdm__frame ${soldOut ? "is-out" : ""}`}>
-                  <span className="pdm__glow" aria-hidden="true" />
-                  <motion.img className="pdm__img" key={selected.image}
-                    src={selected.image || PRODUCT_PLACEHOLDER} alt={name}
-                    initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: EASE }}
-                    onError={(e) => { if (e.currentTarget.src !== window.location.origin + PRODUCT_PLACEHOLDER) e.currentTarget.src = PRODUCT_PLACEHOLDER; }} />
-                  {soldOut && <span className="pdm__soldBadge">Sin stock</span>}
-                  {prevPrice && <span className="pcard__outlet pdm__outletBadge">{disc > 0 ? `-${disc}%` : "Outlet"}</span>}
+                <div className="pdm__gallery">
+                  <div className={`pdm__frame ${soldOut ? "is-out" : ""}`}>
+                    <span className="pdm__glow" aria-hidden="true" />
+                    <motion.img className="pdm__img" key={selected.image}
+                      src={selected.image || PRODUCT_PLACEHOLDER} alt={name}
+                      initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: EASE }}
+                      onError={onImgErr} />
+                    {soldOut && <span className="pdm__soldBadge">Sin stock</span>}
+                    {prevPrice && <span className="pcard__outlet pdm__outletBadge">{disc > 0 ? `-${disc}%` : "Outlet"}</span>}
+                  </div>
+
+                  {colorList.length > 1 && (
+                    <div className="pdm__thumbs" role="list" aria-label="Colores">
+                      {colorList.map((c) => (
+                        <button key={c.id} type="button" role="listitem"
+                          className={`pdm__thumb ${selected.id === c.id ? "is-on" : ""} ${c.soldOut ? "is-out" : ""}`}
+                          onClick={() => setVariantId(c.id)}
+                          title={[c.name, c.acabado].filter(Boolean).join(" ") + (c.soldOut ? " — sin stock" : "")}>
+                          <img src={c.image || PRODUCT_PLACEHOLDER} alt={c.name} loading="lazy" onError={onImgErr} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -356,6 +377,22 @@ export default function ModelPage({ model }) {
             <div className="pd__section">
               <h2 className="pd__secTitle">Descripción</h2>
               <p className="pd__desc">{model.description}</p>
+            </div>
+          )}
+
+          {/* Otros diseños del mismo modelo */}
+          {otherDesigns.length > 0 && (
+            <div className="pd__section">
+              <h2 className="pd__secTitle">Otros diseños de {model.title}</h2>
+              <div className="pd__designs">
+                {otherDesigns.map((d) => (
+                  <Link key={d.design} to={`/producto/${encodeURIComponent(model.slug)}/${encodeURIComponent(d.design)}`} className="pd__designCard">
+                    <div className="pd__designImg"><img src={d.image} alt={`${model.title} ${d.label}`} loading="lazy" onError={onImgErr} /></div>
+                    <span className="pd__designName">{d.label}</span>
+                    {d.price && <span className="pd__designPrice tabular">{d.price}</span>}
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
         </div>
