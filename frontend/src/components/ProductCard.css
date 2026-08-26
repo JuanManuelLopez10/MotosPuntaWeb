@@ -31,17 +31,24 @@
   position: absolute;
   top: var(--sp-3);
   left: var(--sp-3);
+  z-index: 2;
   font-family: var(--font-display);
   text-transform: uppercase;
+  font-weight: 700;
   font-size: 0.7rem;
   letter-spacing: 0.06em;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  background: rgba(0, 0, 0, 0.62);
-  backdrop-filter: blur(4px);
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(10, 10, 11, 0.7);
+  backdrop-filter: blur(6px);
   color: #fff;
   border: 1px solid var(--border-strong);
 }
+
+/* Agotado: se atenúa la imagen para que el cartel "Sin stock" tenga peso. */
+.pcard__media img.is-out { filter: grayscale(0.5) brightness(0.72); opacity: 0.78; }
+.pcard--out { opacity: 0.94; }
+.pcard--out:hover { opacity: 1; }
 
 /* Zona Outlet */
 .pcard--outlet { border-color: rgba(225, 19, 34, 0.45); }

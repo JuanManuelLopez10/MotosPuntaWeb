@@ -50,19 +50,20 @@ export default function ProductCard({ product }) {
   }
 
   return (
-    <article className={`pcard ${outlet ? "pcard--outlet" : ""}`}>
+    <article className={`pcard ${outlet ? "pcard--outlet" : ""} ${soldOut ? "pcard--out" : ""}`}>
       <Link to={`/producto/${encodeURIComponent(product.id)}`} className="pcard__media" aria-label={name}>
         <img
           src={productImage(product)}
           alt={name}
           loading="lazy"
+          className={soldOut ? "is-out" : ""}
           onError={(e) => {
             if (e.currentTarget.src !== window.location.origin + PRODUCT_PLACEHOLDER) {
               e.currentTarget.src = PRODUCT_PLACEHOLDER;
             }
           }}
         />
-        {moto && soldOut && <span className="pcard__badge">Sin stock</span>}
+        {soldOut && <span className="pcard__badge">Sin stock</span>}
         {outlet && <span className="pcard__outlet">{disc ? `-${disc}%` : "Outlet"}</span>}
       </Link>
 
