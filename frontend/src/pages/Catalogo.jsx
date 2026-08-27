@@ -7,6 +7,7 @@ import Loader from "../components/Loader";
 import ModelCard from "../components/ModelCard";
 import { SIZE_ORDER } from "../lib/catalog";
 import { fetchModels, modelPriceValue, modelColors, modelSizes, catalogEntries } from "../lib/models";
+import { fetchRelevance, relKey } from "../lib/relevance";
 import { CATALOG_CATEGORIES } from "../data/site";
 import { useSeo } from "../lib/seo";
 import "./Catalogo.css";
@@ -98,9 +99,12 @@ export default function Catalogo() {
   const [stockOnly, setStockOnly] = useState(() => searchParams.get("stock") === "1");
   const [sort, setSort] = useState(() => searchParams.get("orden") || "relevance");
 
+  const [relevance, setRelevance] = useState({});
+
   useEffect(() => {
     let alive = true;
     fetchModels().then((m) => alive && setProducts(m)).catch((e) => alive && setError(e.message));
+    fetchRelevance().then((r) => alive && setRelevance(r || {})).catch(() => {});
     return () => { alive = false; };
   }, []);
 
@@ -171,7 +175,8 @@ export default function Catalogo() {
     const sizeSet = optSet("size", (m) => modelSizes(m), sizes);
 
     let list = inCategory.filter((m) => match(m, null));
-    if (sort === "price-asc") list = [...list].sort((a, b) => (modelPriceValue(a) || 0) - (modelPriceValue(b) || 0));
+    if (sort === "relevance") list = [...list].sort((a, b) => (relevance[relKey(b.slug, b.design)] || 0) - (relevance[relKey(a.slug, a.design)] || 0));
+    else if (sort === "price-asc") list = [...list].sort((a, b) => (modelPriceValue(a) || 0) - (modelPriceValue(b) || 0));
     else if (sort === "price-desc") list = [...list].sort((a, b) => (modelPriceValue(b) || 0) - (modelPriceValue(a) || 0));
     else if (sort === "name") list = [...list].sort((a, b) => (a.displayName || a.title || "").localeCompare(b.displayName || b.title || "", "es"));
 
@@ -182,7 +187,7 @@ export default function Catalogo() {
       brandOptions: sortStr([...brandSet]),
       sizeOptions: SIZE_ORDER.filter((s) => sizeSet.has(s)),
     };
-  }, [inCategory, active, query, types, colors, sizes, brands, priceMin, priceMax, stockOnly, sort]);
+  }, [inCategory, active, query, types, colors, sizes, brands, priceMin, priceMax, stockOnly, sort, relevance]);
 
   const shown = filtered.slice(0, visible);
   const toggle = (setter) => (val) => setter((cur) => (cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val]));

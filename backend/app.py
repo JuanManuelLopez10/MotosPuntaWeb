@@ -343,6 +343,128 @@ def get_producto_model(slug):
     return jsonify(m)
 
 
+# --- RELEVANCIA (popularidad con decaimiento) ------------------------------------------------
+# Cada entrada Modelo+Diseño acumula "puntos" (visita a la ficha = +1, venta desde la app = +N),
+# pero con DECAIMIENTO EXPONENCIAL: cada punto pierde la mitad de su peso cada RELEVANCE_HALFLIFE
+# días. Así lo reciente pesa más que lo viejo y nada crece infinito (no es histórico).
+# Se guarda TODO en un solo doc (meta/relevancia, campo `scores`: {clave: {s, t}}), para leer/
+# escribir con 1 operación y no disparar las cuotas de Firestore.
+RELEVANCE_HALFLIFE_DAYS = 30
+VISIT_WEIGHT = 1.0
+SALE_WEIGHT = 5.0
+TRACK_SECRET = os.getenv("TRACK_SECRET", "")   # protege /api/track/sale (lo manda la app)
+VISIT_COOLDOWN = 600                            # misma IP+producto no cuenta 2 veces en 10 min
+
+_rel_serve_cache = {"data": None, "ts": 0.0}
+REL_SERVE_TTL = 30
+_visit_guard = {}  # (ip, key) -> ts   (anti-abuso en memoria, best-effort)
+
+
+def _rel_key(slug, design):
+    slug = str(slug or "").strip()
+    if not slug:
+        return ""
+    d = str(design or "").strip().lower()
+    return f"{slug}|{d}" if d and d != "colores" else slug
+
+
+def _decay_factor(dt_seconds):
+    if dt_seconds <= 0:
+        return 1.0
+    return 0.5 ** (dt_seconds / (RELEVANCE_HALFLIFE_DAYS * 86400.0))
+
+
+def _bump_relevance(key, weight):
+    """Suma `weight` al score de `key`, decayendo lo previo al momento actual. Transacción sobre
+    el doc único; el merge no pisa las otras claves."""
+    now = int(time.time())
+    ref = db.collection("meta").document("relevancia")
+
+    @firestore.transactional
+    def _txn(txn):
+        snap = ref.get(transaction=txn)
+        cur = ((snap.to_dict() or {}).get("scores") or {}).get(key) if snap.exists else None
+        s = float((cur or {}).get("s", 0.0))
+        t = int((cur or {}).get("t", now))
+        s = s * _decay_factor(now - t) + float(weight)
+        txn.set(ref, {"scores": {key: {"s": s, "t": now}}}, merge=True)
+
+    _txn(db.transaction())
+
+
+def _relevance_map():
+    """Mapa {clave: valor decayado AHORA}, cacheado unos segundos."""
+    now = time.time()
+    if _rel_serve_cache["data"] is not None and now - _rel_serve_cache["ts"] < REL_SERVE_TTL:
+        return _rel_serve_cache["data"]
+    snap = db.collection("meta").document("relevancia").get()
+    scores = (snap.to_dict() or {}).get("scores", {}) if snap.exists else {}
+    nowi = int(now)
+    out = {k: round(float(v.get("s", 0.0)) * _decay_factor(nowi - int(v.get("t", nowi))), 4)
+           for k, v in scores.items() if isinstance(v, dict)}
+    _rel_serve_cache["data"] = out
+    _rel_serve_cache["ts"] = now
+    return out
+
+
+@app.route("/api/relevance")
+def get_relevance():
+    """Ranking de relevancia para ordenar el catálogo: {clave: valor}. Nunca rompe (si no hay
+    datos o falla, devuelve {})."""
+    if db is None:
+        return jsonify({}), 200
+    try:
+        return jsonify(_relevance_map())
+    except Exception as e:
+        print("relevance err:", e)
+        return jsonify({}), 200
+
+
+@app.route("/api/track/visit", methods=["POST"])
+def track_visit():
+    """+1 de relevancia a una entrada Modelo+Diseño. Público (lo llama la web al abrir la ficha),
+    con anti-abuso: misma IP+producto no cuenta de nuevo por VISIT_COOLDOWN."""
+    if db is None:
+        return jsonify({"ok": False}), 200
+    data = request.get_json(silent=True) or {}
+    key = _rel_key(data.get("slug"), data.get("design"))
+    if not key:
+        return jsonify({"ok": False}), 200
+    ip = (request.headers.get("X-Forwarded-For", "") or request.remote_addr or "").split(",")[0].strip()
+    now = time.time()
+    if now - _visit_guard.get((ip, key), 0) < VISIT_COOLDOWN:
+        return jsonify({"ok": True, "counted": False}), 200
+    _visit_guard[(ip, key)] = now
+    if len(_visit_guard) > 5000:  # limpieza para no crecer sin fin
+        for kk in [kk for kk, tt in list(_visit_guard.items()) if now - tt > VISIT_COOLDOWN]:
+            _visit_guard.pop(kk, None)
+    try:
+        _bump_relevance(key, VISIT_WEIGHT)
+    except Exception as e:
+        print("track visit err:", e)
+    return jsonify({"ok": True, "counted": True}), 200
+
+
+@app.route("/api/track/sale", methods=["POST"])
+def track_sale():
+    """+N de relevancia por una venta (lo llama la app tras markSold). Protegido por TRACK_SECRET."""
+    if db is None:
+        return jsonify({"ok": False}), 200
+    # Requiere secreto SIEMPRE: si TRACK_SECRET no está configurado, el endpoint queda deshabilitado
+    # (evita abuso). Se habilita en la Parte B cuando se setea TRACK_SECRET en Render + la app lo manda.
+    if not TRACK_SECRET or request.headers.get("X-Track-Secret") != TRACK_SECRET:
+        return jsonify({"ok": False}), 403
+    data = request.get_json(silent=True) or {}
+    key = _rel_key(data.get("slug"), data.get("design"))
+    if not key:
+        return jsonify({"ok": False}), 200
+    try:
+        _bump_relevance(key, SALE_WEIGHT)
+    except Exception as e:
+        print("track sale err:", e)
+    return jsonify({"ok": True}), 200
+
+
 @app.route("/meta-feed-productos.csv")
 def meta_feed_productos_csv():
     """Feed de Meta desde la colección 'productos' (nuevo). Convive con /meta-feed.csv; el

@@ -14,6 +14,7 @@ import {
 } from "../lib/models";
 import { useSeo } from "../lib/seo";
 import { useCart } from "../lib/cart.jsx";
+import { trackVisit } from "../lib/relevance";
 import "./Producto.css";
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -84,6 +85,9 @@ export default function ModelPage({ model }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [design, model.slug]);
   const selected = dVariants.find((v) => v.id === variantId) || dVariants[0] || vs[0] || {};
+
+  // Relevancia: registra la visita a la ficha de este diseño (deduplicado por sesión).
+  useEffect(() => { trackVisit(model.slug, design); }, [model.slug, design]);
 
   const price = formatPrice(selected.price);
   const curVal = priceValue(selected.price);
