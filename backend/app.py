@@ -95,7 +95,7 @@ filteredProducts = []
 
 # Caché del árbol anidado de la colección 'productos' (modelos con variantes), para /api/productos.
 _prod_tree_cache = {"data": None, "ts": 0.0}
-PRODUCTOS_TREE_TTL = 60
+PRODUCTOS_TREE_TTL = 300  # 5 min; la ficha y el listado comparten este cache. Ctrl+Shift+R lo fuerza.
 filters = {"type":"", "brand": "", "color": "", "size": "", "MinPrice": "", "MaxPrice": ""}
 
 def filterProducts():
@@ -297,27 +297,43 @@ def get_product_by_db(productId):
 
 # --- Colección anidada 'productos' (modelo → diseño/colores → variante). Endpoints NUEVOS
 #     que conviven con /api/products; los alimenta la web nueva (catálogo por modelo + SEO). ---
-@app.route("/api/productos")
-def get_productos_tree():
-    if db is None:
-        return jsonify({"error": "Base de datos no disponible"}), 503
+def _get_productos_tree(hard=False):
+    """Árbol de modelos con variantes, cacheado en memoria (TTL). Lo comparten el listado
+    y la ficha (/api/producto/<slug>), así ninguna ruta paga el costo de leer Firestore por
+    request. `hard=True` fuerza refresco (Ctrl+Shift+R en el front)."""
     now = time.time()
-    hard = "no-cache" in (
-        request.headers.get("Cache-Control", "") + " " + request.headers.get("Pragma", "")
-    ).lower()
     if hard or _prod_tree_cache["data"] is None or (now - _prod_tree_cache["ts"]) >= PRODUCTOS_TREE_TTL:
         _prod_tree_cache["data"] = read_productos(db)
         _prod_tree_cache["ts"] = now
         print("Productos: por db")
     else:
         print("Productos: por cache")
-    return jsonify(_prod_tree_cache["data"])
+    return _prod_tree_cache["data"]
+
+
+@app.route("/api/productos")
+def get_productos_tree():
+    if db is None:
+        return jsonify({"error": "Base de datos no disponible"}), 503
+    hard = "no-cache" in (
+        request.headers.get("Cache-Control", "") + " " + request.headers.get("Pragma", "")
+    ).lower()
+    return jsonify(_get_productos_tree(hard=hard))
 
 
 @app.route("/api/producto/<slug>")
 def get_producto_model(slug):
     if db is None:
         return jsonify({"error": "Base de datos no disponible"}), 503
+    # Servir desde el árbol cacheado (mismo shape que read_model) para no pagar el costo de
+    # .collections() por request (~6s). Si el modelo no está en el cache (recién creado),
+    # se lee fresco como fallback.
+    hard = "no-cache" in (
+        request.headers.get("Cache-Control", "") + " " + request.headers.get("Pragma", "")
+    ).lower()
+    for m in _get_productos_tree(hard=hard):
+        if m.get("slug") == slug:
+            return jsonify(m)
     m = read_model(db, slug)
     if m is None:
         return jsonify({"error": "Producto no encontrado"}), 404

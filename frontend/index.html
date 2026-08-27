@@ -63,6 +63,12 @@
     }
     </script>
 
+    <!-- Calentar DNS/TLS de los orígenes críticos (API + imágenes) para que el primer fetch
+         y las primeras fotos arranquen sin la penalidad de handshake. -->
+    <link rel="preconnect" href="https://motospuntaweb.onrender.com" crossorigin />
+    <link rel="preconnect" href="https://pub-bf9ca1311dd14422b325c7934e5e96c0.r2.dev" crossorigin />
+    <link rel="dns-prefetch" href="https://iili.io" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />

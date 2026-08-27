@@ -3,16 +3,36 @@ import { formatPrice, priceValue, PRODUCT_PLACEHOLDER } from "./catalog";
 
 // --- Fase 2: la web lee la colección anidada `productos` (un doc por MODELO, con variantes). ---
 
+// Caché en memoria del listado (por sesión de pestaña). Evita re-descargar el catálogo en
+// cada navegación y permite resolver la ficha SIN pegarle a la red si ya lo tenemos.
+let _modelsCache = null;   // { data, ts }
+let _modelsPromise = null; // dedup de llamadas concurrentes
+const MODELS_TTL = 5 * 60 * 1000; // 5 min (alineado con el cache del backend)
+
 // Trae todos los modelos (cada uno con su lista `variants`).
 export async function fetchModels() {
-  const res = await fetch(buildApiUrl("/api/productos"));
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  const data = await res.json();
-  return Array.isArray(data) ? data : [];
+  const now = Date.now();
+  if (_modelsCache && now - _modelsCache.ts < MODELS_TTL) return _modelsCache.data;
+  if (_modelsPromise) return _modelsPromise;
+  _modelsPromise = fetch(buildApiUrl("/api/productos"))
+    .then((res) => { if (!res.ok) throw new Error(`API ${res.status}`); return res.json(); })
+    .then((data) => {
+      const arr = Array.isArray(data) ? data : [];
+      _modelsCache = { data: arr, ts: Date.now() };
+      _modelsPromise = null;
+      return arr;
+    })
+    .catch((e) => { _modelsPromise = null; throw e; });
+  return _modelsPromise;
 }
 
-// Trae un modelo por su slug.
+// Trae un modelo por su slug. Si el listado ya está en memoria, lo resuelve desde ahí
+// (sin red); si no, pega al endpoint de un solo modelo.
 export async function fetchModel(slug) {
+  if (_modelsCache) {
+    const hit = _modelsCache.data.find((m) => m.slug === slug);
+    if (hit) return hit;
+  }
   const res = await fetch(buildApiUrl(`/api/producto/${encodeURIComponent(slug)}`));
   if (!res.ok) throw new Error(`API ${res.status}`);
   return await res.json();
