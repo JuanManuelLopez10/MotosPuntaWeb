@@ -27,6 +27,18 @@
   transition: transform var(--dur) var(--ease);
 }
 .pcard:hover .pcard__media img { transform: scale(1.04); }
+
+/* Cross-fade de colores (ModelCard): capa base + capa hover superpuesta que aparece/desaparece
+   en opacidad al pasar el cursor por un círculo de color. */
+.pcard__media .pcard__img {
+  position: absolute;
+  inset: var(--sp-4);
+  width: auto;
+  height: auto;
+  transition: opacity 0.4s var(--ease), transform var(--dur) var(--ease);
+}
+.pcard__media .pcard__img--hover { opacity: 0; }
+.pcard__media .pcard__img--hover.is-shown { opacity: 1; }
 .pcard__badge {
   position: absolute;
   top: var(--sp-3);
