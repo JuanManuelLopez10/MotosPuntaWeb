@@ -95,7 +95,10 @@ filteredProducts = []
 
 # Caché del árbol anidado de la colección 'productos' (modelos con variantes), para /api/productos.
 _prod_tree_cache = {"data": None, "ts": 0.0}
-PRODUCTOS_TREE_TTL = 300  # 5 min; la ficha y el listado comparten este cache. Ctrl+Shift+R lo fuerza.
+PRODUCTOS_TREE_TTL = 900  # 15 min; la ficha y el listado comparten este cache. Ctrl+Shift+R lo fuerza.
+# Nota: el keep-alive (UptimeRobot) debe pegarle a "/" (no a /api/productos) para NO forzar una
+# relectura de Firestore en cada ping. Así el catálogo solo se relee cuando entra una visita real
+# y venció el TTL, en vez de cada 5 min. Baja fuerte el consumo de lecturas de Firestore.
 filters = {"type":"", "brand": "", "color": "", "size": "", "MinPrice": "", "MaxPrice": ""}
 
 def filterProducts():
