@@ -10,6 +10,9 @@ from productos_reader import read_productos, read_model
 import mercadopago
 import requests
 import time
+import hashlib
+import firebase_admin
+from firebase_admin import credentials as fb_credentials, messaging as fcm
 
 app = Flask(__name__)
 
@@ -51,6 +54,17 @@ if credentials_json:
 else:
     print("⚠️ GOOGLE_CREDENTIALS no está definida, Firestore no se inicializará")
     db = None
+
+# Firebase Admin: para enviar notificaciones push (FCM) a la app de administración. Reusa las
+# MISMAS credenciales del service account (no hace falta configurar nada nuevo; FCM es gratis).
+fb_app = None
+if db is not None:
+    try:
+        fb_app = firebase_admin.initialize_app(fb_credentials.Certificate(credentials_dict))
+        print("✅ Firebase Admin (FCM) inicializado")
+    except Exception as e:
+        print("⚠️ No se pudo inicializar Firebase Admin (FCM):", e)
+        fb_app = None
 
 VERIFY_TOKEN = "motospunta_verify"
 
@@ -374,11 +388,30 @@ def _decay_factor(dt_seconds):
     return 0.5 ** (dt_seconds / (RELEVANCE_HALFLIFE_DAYS * 86400.0))
 
 
+def _design_label(d):
+    return str(d or "").replace("-", " ").strip().title()
+
+
+def _key_label(key):
+    """Nombre legible de una entrada (para las notificaciones), desde el árbol cacheado."""
+    slug, _, design = str(key).partition("|")
+    try:
+        for m in _get_productos_tree():
+            if m.get("slug") == slug:
+                title = m.get("title", slug)
+                return f"{title} {_design_label(design)}".strip() if design else title
+    except Exception:
+        pass
+    return key
+
+
 def _bump_relevance(key, weight):
-    """Suma `weight` al score de `key`, decayendo lo previo al momento actual. Transacción sobre
-    el doc único; el merge no pisa las otras claves."""
+    """Suma `weight` al score decayado de `key` y +1 al contador acumulado `n` (visitas+ventas).
+    Devuelve el múltiplo de 5 recién cruzado (para notificar) o None. Transacción sobre el doc
+    único; el merge no pisa las otras claves."""
     now = int(time.time())
     ref = db.collection("meta").document("relevancia")
+    result = {"crossed": None}
 
     @firestore.transactional
     def _txn(txn):
@@ -386,10 +419,24 @@ def _bump_relevance(key, weight):
         cur = ((snap.to_dict() or {}).get("scores") or {}).get(key) if snap.exists else None
         s = float((cur or {}).get("s", 0.0))
         t = int((cur or {}).get("t", now))
+        n = int((cur or {}).get("n", 0))
         s = s * _decay_factor(now - t) + float(weight)
-        txn.set(ref, {"scores": {key: {"s": s, "t": now}}}, merge=True)
+        new_n = n + 1
+        if new_n >= 5 and (n // 5) != (new_n // 5):
+            result["crossed"] = (new_n // 5) * 5
+        txn.set(ref, {"scores": {key: {"s": s, "t": now, "n": new_n}}}, merge=True)
 
     _txn(db.transaction())
+    if result["crossed"]:
+        try:
+            send_push(
+                "🔥 Producto en alza",
+                f"{_key_label(key)} llegó a {result['crossed']} de interés (visitas + ventas)",
+                data={"tipo": "milestone", "key": key, "n": result["crossed"]},
+            )
+        except Exception as e:
+            print("milestone push err:", e)
+    return result
 
 
 def _relevance_map():
@@ -465,6 +512,131 @@ def track_sale():
     return jsonify({"ok": True}), 200
 
 
+# --- PUSH (FCM) a la app de administración ---------------------------------------------------
+# La app (en TODOS los teléfonos de la empresa) registra su token FCM; el backend manda el push
+# a todos en cada evento y limpia los que quedan inválidos. FCM es gratis (no necesita Blaze).
+PUSH_COLL = "admin_devices"
+
+
+def _tok_id(token):
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _push_tokens(exclude=None):
+    if db is None:
+        return []
+    out = []
+    for d in db.collection(PUSH_COLL).stream():
+        t = (d.to_dict() or {}).get("token") or ""
+        if t and t != exclude:
+            out.append(t)
+    return out
+
+
+def send_push(title, body, data=None, exclude_token=None):
+    """Notifica a todos los dispositivos registrados. Best-effort: nunca rompe el flujo que lo
+    dispara. Borra los tokens que FCM reporta como dados de baja / inválidos."""
+    if fb_app is None or db is None:
+        return
+    tokens = _push_tokens(exclude=exclude_token)
+    if not tokens:
+        return
+    payload = {k: str(v) for k, v in (data or {}).items()}
+    try:
+        msg = fcm.MulticastMessage(
+            tokens=tokens,
+            notification=fcm.Notification(title=title, body=body),
+            data=payload,
+            android=fcm.AndroidConfig(priority="high"),
+        )
+        resp = fcm.send_each_for_multicast(msg)
+        for tok, r in zip(tokens, resp.responses):
+            if not r.success and r.exception is not None:
+                emsg = str(r.exception).lower()
+                if "not a valid" in emsg or "not registered" in emsg or "unregistered" in emsg:
+                    try:
+                        db.collection(PUSH_COLL).document(_tok_id(tok)).delete()
+                    except Exception:
+                        pass
+    except Exception as e:
+        print("send_push err:", e)
+
+
+@app.route("/api/push/register", methods=["POST"])
+def push_register():
+    """La app registra/actualiza el token FCM de un dispositivo."""
+    if db is None:
+        return jsonify({"ok": False}), 200
+    data = request.get_json(silent=True) or {}
+    token = str(data.get("token") or "").strip()
+    if not token:
+        return jsonify({"ok": False}), 400
+    db.collection(PUSH_COLL).document(_tok_id(token)).set({
+        "token": token,
+        "device": str(data.get("device") or "")[:120],
+        "updatedAt": firestore.SERVER_TIMESTAMP,
+    }, merge=True)
+    return jsonify({"ok": True}), 200
+
+
+@app.route("/api/push/unregister", methods=["POST"])
+def push_unregister():
+    if db is None:
+        return jsonify({"ok": False}), 200
+    token = str((request.get_json(silent=True) or {}).get("token") or "").strip()
+    if token:
+        try:
+            db.collection(PUSH_COLL).document(_tok_id(token)).delete()
+        except Exception:
+            pass
+    return jsonify({"ok": True}), 200
+
+
+_checkout_guard = {}          # IP -> ts (evita spamear el push del checkout)
+CHECKOUT_COOLDOWN = 300
+
+
+@app.route("/api/track/checkout", methods=["POST"])
+def track_checkout():
+    """Aviso: un cliente llegó a la pantalla de checkout (fase previa a la compra)."""
+    if db is None:
+        return jsonify({"ok": False}), 200
+    data = request.get_json(silent=True) or {}
+    ip = (request.headers.get("X-Forwarded-For", "") or request.remote_addr or "").split(",")[0].strip()
+    now = time.time()
+    if now - _checkout_guard.get(ip, 0) < CHECKOUT_COOLDOWN:
+        return jsonify({"ok": True, "counted": False}), 200
+    _checkout_guard[ip] = now
+    if len(_checkout_guard) > 5000:
+        for kk in [kk for kk, tt in list(_checkout_guard.items()) if now - tt > CHECKOUT_COOLDOWN]:
+            _checkout_guard.pop(kk, None)
+    resumen = str(data.get("resumen") or "").strip()[:200]
+    total = str(data.get("total") or "").strip()[:40]
+    cuerpo = resumen or "Un cliente está por comprar"
+    if total:
+        cuerpo += f" · {total}"
+    send_push("🛒 Cliente en el checkout", cuerpo, data={"tipo": "checkout"})
+    return jsonify({"ok": True, "counted": True}), 200
+
+
+@app.route("/api/track/alerta", methods=["POST"])
+def track_alerta():
+    """La app avisa que un producto pasó a ALERTA (tocheck). Notifica a los DEMÁS dispositivos
+    (excluye al que lo marcó). Protegido por TRACK_SECRET."""
+    if db is None:
+        return jsonify({"ok": False}), 200
+    if not TRACK_SECRET or request.headers.get("X-Track-Secret") != TRACK_SECRET:
+        return jsonify({"ok": False}), 403
+    data = request.get_json(silent=True) or {}
+    nombre = str(data.get("nombre") or "").strip()[:140]
+    if not nombre:
+        k = _rel_key(data.get("slug"), data.get("design"))
+        nombre = _key_label(k) if k else "Un producto"
+    exclude = str(data.get("excludeToken") or "").strip() or None
+    send_push("⚠️ Producto en alerta", f"{nombre} — revisá stock", data={"tipo": "alerta"}, exclude_token=exclude)
+    return jsonify({"ok": True}), 200
+
+
 @app.route("/meta-feed-productos.csv")
 def meta_feed_productos_csv():
     """Feed de Meta desde la colección 'productos' (nuevo). Convive con /meta-feed.csv; el
@@ -523,6 +695,13 @@ def create_lead():
     }
     try:
         ref = db.collection("leads").add(lead)
+        # Aviso push a la app de administración.
+        es_fin = lead["tipo"].lower().startswith("financ")
+        titulo = "📩 Nueva solicitud de financiación" if es_fin else "📩 Nueva consulta"
+        cuerpo = f"{lead['nombre']} — {lead['contacto']}"
+        if lead["producto"]:
+            cuerpo += f" · {lead['producto']}"
+        send_push(titulo, cuerpo, data={"tipo": "lead", "leadId": ref[1].id})
         return jsonify({"ok": True, "id": ref[1].id}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500

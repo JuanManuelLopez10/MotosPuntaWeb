@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Store, Truck, Building2, Wallet, CreditCard, MessageCircle, ShieldCheck, Check, Loader2, CheckCircle2 } from "lucide-react";
@@ -7,6 +7,7 @@ import { useCart } from "../lib/cart.jsx";
 import { CHECKOUT } from "../data/checkout";
 import { waLink } from "../data/site";
 import { submitOrder } from "../lib/orders";
+import { trackCheckout } from "../lib/relevance";
 import { useSeo } from "../lib/seo";
 import "./Checkout.css";
 
@@ -41,6 +42,14 @@ export default function Checkout() {
   const base = subtotal;
   const surcharge = metodo === "mercadopago" ? Math.round((base * CHECKOUT.mpSurchargePct) / 100) : 0;
   const total = base + surcharge;
+
+  // Aviso a la app: un cliente llegó al checkout (fase previa a la compra). 1 vez por sesión.
+  useEffect(() => {
+    if (items.length > 0) {
+      const resumen = items.map((i) => `${i.qty}× ${i.title}${i.size ? ` · ${i.size}` : ""}`).join(", ");
+      trackCheckout(resumen, fmt(subtotal));
+    }
+  }, [items.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const needsAddress = entrega === "envio";
   const errors = {

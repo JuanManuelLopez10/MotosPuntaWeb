@@ -51,3 +51,19 @@ export function trackVisit(slug, design) {
     }).catch(() => {});
   } catch { /* noop */ }
 }
+
+// --- Aviso "un cliente llegó al checkout" (push a la app). 1 vez por sesión. ---
+export function trackCheckout(resumen, total) {
+  try {
+    if (sessionStorage.getItem("mp_checkout_notified")) return;
+    sessionStorage.setItem("mp_checkout_notified", "1");
+  } catch { /* noop */ }
+  try {
+    fetch(buildApiUrl("/api/track/checkout"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ resumen: String(resumen || ""), total: String(total || "") }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch { /* noop */ }
+}
