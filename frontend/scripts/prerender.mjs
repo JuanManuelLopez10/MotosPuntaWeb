@@ -159,6 +159,12 @@ function mSeoDescription(m) {
   const extra = mIsMoto(m) ? " Moto 0km con financiación disponible." : " Consultá stock y precio por WhatsApp.";
   return `${m.title}${brand} en Motos Punta, Maldonado.${priceTxt}${extra}`;
 }
+// Título SEO local: incluye "0km" (motos) + "Maldonado" (la palabra que la gente busca). El
+// " | Motos Punta" lo agrega seoBlock, así no se repite la marca.
+function mSeoTitle(m) {
+  const km = mIsMoto(m) ? " 0km" : "";
+  return `${m.title || ""}${km} en Maldonado`;
+}
 function mJsonLd(m) {
   const pv = mPriceValue(m);
   const j = {
@@ -268,7 +274,7 @@ async function main() {
       if (mPriceValue(m) == null) continue; // sin precio no lo indexamos
       await write(`/producto/${m.slug}`, {
         path: `/producto/${m.slug}`,
-        title: (m.seo && m.seo.title) || m.title,
+        title: mSeoTitle(m),
         description: (m.seo && m.seo.description) || mSeoDescription(m),
         image: mImage(m),
         type: "product",

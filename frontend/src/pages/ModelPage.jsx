@@ -126,7 +126,7 @@ export default function ModelPage({ model }) {
 
   useSeo({
     path: seoPath,
-    title: model.seo?.title || [model.title, designName].filter(Boolean).join(" "),
+    title: `${[model.title, designName].filter(Boolean).join(" ")}${moto ? " 0km" : ""} en Maldonado`,
     description: seoDesc,
     image: selected.image,
     type: "product",
