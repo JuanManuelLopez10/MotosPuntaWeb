@@ -843,8 +843,12 @@ def create_order():
     order_id = ref[1].id
 
     _notify_shop(_order_summary_msg(order, order_id))
+    _items_txt = ", ".join(f"{i['qty']}× {i['title']}" for i in order["items"])
 
     if metodo != "mercadopago":
+        # Transferencia/efectivo: el pedido queda anotado y hay que actuar → push al toque.
+        _metodo_txt = {"transferencia": "Transferencia", "efectivo": "Efectivo"}.get(metodo, metodo)
+        send_push("🧾 Nuevo pedido", f"{_items_txt} · {_metodo_txt} · USD {total_usd}", data={"tipo": "order", "orderId": order_id})
         return jsonify({"ok": True, "orderId": order_id, "metodo": metodo, "estado": estado, "totalUsd": total_usd}), 201
 
     # Mercado Pago: crear la preferencia (Checkout Pro). MP cobra en pesos.
@@ -924,6 +928,7 @@ def mp_webhook():
             })
             if status == "approved":
                 _notify_shop(f"✅ Pago confirmado por Mercado Pago — Orden #{order_id}.")
+                send_push("💰 Pago confirmado (Mercado Pago)", f"Orden #{order_id} — pago aprobado", data={"tipo": "payment", "orderId": order_id})
     except Exception as e:
         print("Webhook MP error:", e)
     return "", 200
