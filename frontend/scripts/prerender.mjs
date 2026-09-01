@@ -134,6 +134,56 @@ function seoBlock({ title, description, path, image, type = "website", jsonLd })
   return lines.join("\n    ");
 }
 
+// ---- helpers de MODELO (colección `productos`: un doc por modelo, con variantes) ----
+const mVariants = (m) => (Array.isArray(m.variants) ? m.variants : []);
+const vInStock = (v) => String(v?.availability || "").trim().toLowerCase() === "in stock";
+const mIsMoto = (m) => String(m.productType || "").trim().toLowerCase() === "motos";
+const mImage = (m) => {
+  const withImg = mVariants(m).filter((v) => (v.image || "").trim());
+  const pick = withImg.find(vInStock) || withImg[0];
+  const img = pick ? pick.image.trim() : "";
+  if (!img) return DEFAULT_IMAGE;
+  return img.startsWith("http") ? img : `${SITE_URL}${img}`;
+};
+const mPriceValue = (m) => {
+  const nums = mVariants(m).map((v) => priceValue(v.price)).filter((n) => n != null);
+  return nums.length ? Math.min(...nums) : null;
+};
+const mInStock = (m) => mVariants(m).some(vInStock);
+function mSeoDescription(m) {
+  const own = (m.description || "").trim();
+  if (own && own !== (m.title || "").trim()) return own.slice(0, 300);
+  const pv = mPriceValue(m);
+  const priceTxt = pv != null ? ` Precio: USD ${pv.toLocaleString("es-UY")}.` : "";
+  const brand = m.brand && !(m.title || "").includes(m.brand) ? ` ${m.brand}` : "";
+  const extra = mIsMoto(m) ? " Moto 0km con financiación disponible." : " Consultá stock y precio por WhatsApp.";
+  return `${m.title}${brand} en Motos Punta, Maldonado.${priceTxt}${extra}`;
+}
+function mJsonLd(m) {
+  const pv = mPriceValue(m);
+  const j = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: m.title,
+    image: [mImage(m)],
+    description: mSeoDescription(m),
+    sku: m.slug,
+    category: (m.productType || "").toLowerCase() || undefined,
+  };
+  if (m.brand) j.brand = { "@type": "Brand", name: m.brand };
+  if (pv != null) {
+    j.offers = {
+      "@type": "Offer",
+      url: `${SITE_URL}/producto/${m.slug}`,
+      priceCurrency: "USD",
+      price: String(pv),
+      availability: mInStock(m) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      itemCondition: "https://schema.org/NewCondition",
+    };
+  }
+  return j;
+}
+
 const SEO_RE = /<!--seo:start-->[\s\S]*?<!--seo:end-->/;
 
 async function main() {
@@ -198,7 +248,49 @@ async function main() {
     }
   }
 
-  console.log(`prerender: ${count} rutas generadas (${products.length} productos).`);
+  // --- Páginas de producto por MODELO (colección `productos`) — las URLs reales del sitio,
+  //     con <head> propio + datos estructurados de Producto (para rich results) ---
+  let models = [];
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 60000);
+    const res = await fetch(`${API_BASE}/api/productos`, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (res.ok) models = await res.json();
+  } catch (e) {
+    console.warn(`prerender: sin modelos (${e.message}).`);
+  }
+
+  const productUrls = [];
+  if (Array.isArray(models)) {
+    for (const m of models) {
+      if (!m.slug || !safeSeg(String(m.slug))) continue;
+      if (mPriceValue(m) == null) continue; // sin precio no lo indexamos
+      await write(`/producto/${m.slug}`, {
+        path: `/producto/${m.slug}`,
+        title: (m.seo && m.seo.title) || m.title,
+        description: (m.seo && m.seo.description) || mSeoDescription(m),
+        image: mImage(m),
+        type: "product",
+        jsonLd: mJsonLd(m),
+      });
+      count++;
+      productUrls.push(`${SITE_URL}/producto/${m.slug}`);
+    }
+  }
+
+  // --- Sitemap dinámico: estáticas + tipos de moto + todos los productos ---
+  const staticPaths = ["/", "/motos", "/catalogo", "/catalogo/cascos", "/catalogo/indumentaria", "/catalogo/accesorios", "/financiacion", "/outlet", "/contacto"];
+  const motoTypePaths = [...new Set((Array.isArray(models) ? models : []).filter(mIsMoto).map((m) => typeSlug(m.type)).filter(Boolean))].map((s) => `/motos/${s}`);
+  const allUrls = [
+    ...staticPaths.map((p) => `${SITE_URL}${p}`),
+    ...motoTypePaths.map((p) => `${SITE_URL}${p}`),
+    ...productUrls,
+  ];
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${allUrls.map((u) => `  <url><loc>${esc(u)}</loc></url>`).join("\n")}\n</urlset>\n`;
+  await writeFile(join(DIST, "sitemap.xml"), sitemap, "utf8");
+
+  console.log(`prerender: ${count} rutas generadas (${products.length} flat, ${models.length} modelos); sitemap ${allUrls.length} URLs.`);
 }
 
 main().catch((e) => { console.error("prerender error (no bloquea el build):", e); });

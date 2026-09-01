@@ -12,7 +12,7 @@ import { formatPrice, priceValue, PRODUCT_PLACEHOLDER } from "../lib/catalog";
 import {
   variants as getVariants, modelDesigns, modelDesignsInStock, designLabel, isMotoModel, colorHex, variantInStock,
 } from "../lib/models";
-import { useSeo } from "../lib/seo";
+import { useSeo, SITE_URL } from "../lib/seo";
 import { useCart } from "../lib/cart.jsx";
 import { trackVisit } from "../lib/relevance";
 import "./Producto.css";
@@ -100,12 +100,37 @@ export default function ModelPage({ model }) {
   const designName = design ? designLabel(design) : "";
   const name = [model.title, designName, finish].filter(Boolean).join(" ");
 
+  // Datos estructurados de Producto (schema.org) para rich results en Google (foto/precio/stock).
+  const seoPath = `/producto/${model.slug}${design ? `/${design}` : ""}`;
+  const seoDesc = model.seo?.description || model.description || `${model.title} en Motos Punta, Maldonado.`;
+  const absImg = selected.image ? (selected.image.startsWith("http") ? selected.image : `${SITE_URL}${selected.image}`) : undefined;
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: [model.title, designName].filter(Boolean).join(" "),
+    ...(absImg ? { image: [absImg] } : {}),
+    description: seoDesc,
+    sku: model.slug,
+    ...(model.brand ? { brand: { "@type": "Brand", name: model.brand } } : {}),
+  };
+  if (price) {
+    productJsonLd.offers = {
+      "@type": "Offer",
+      url: `${SITE_URL}${seoPath}`,
+      priceCurrency: "USD",
+      price: String(priceValue(selected.price) ?? ""),
+      availability: soldOut ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+      itemCondition: "https://schema.org/NewCondition",
+    };
+  }
+
   useSeo({
-    path: `/producto/${model.slug}${design ? `/${design}` : ""}`,
+    path: seoPath,
     title: model.seo?.title || [model.title, designName].filter(Boolean).join(" "),
-    description: model.seo?.description || model.description || `${model.title} en Motos Punta, Maldonado.`,
+    description: seoDesc,
     image: selected.image,
     type: "product",
+    jsonLd: productJsonLd,
   });
 
   const specs = model.specs || {};
