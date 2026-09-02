@@ -275,7 +275,7 @@ function SolicitudModal({ option, motoName, motoPrice, answers, eligibles, waHre
 
             <form className="fmodal__form" onSubmit={submit} noValidate>
               <label className="ct__field"><span>Nombre *</span><input value={form.nombre} onChange={set("nombre")} autoComplete="name" required /></label>
-              <label className="ct__field"><span>Teléfono o email *</span><input value={form.contacto} onChange={set("contacto")} placeholder="099 123 456 o tu@email.com" required /></label>
+              <label className="ct__field"><span>Teléfono (WhatsApp) *</span><input type="tel" inputMode="tel" value={form.contacto} onChange={set("contacto")} placeholder="099 123 456" autoComplete="tel" required /></label>
               <label className="ct__field"><span>Mensaje (opcional)</span><textarea rows={3} value={form.mensaje} onChange={set("mensaje")} placeholder="Algo que quieras aclarar" /></label>
               <input className="ct__hp" tabIndex={-1} autoComplete="off" value={form.website} onChange={set("website")} aria-hidden="true" />
               {status === "error" && <p className="ct__err">{errorMsg}</p>}

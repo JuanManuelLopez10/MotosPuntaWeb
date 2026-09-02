@@ -707,6 +707,52 @@ def create_lead():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/leads/financiacion", methods=["GET"])
+def list_financing_leads():
+    """Solicitudes de financiación PENDIENTES para la app (pestaña Financiación). Trae datos de
+    clientes → protegido por TRACK_SECRET (no se expone `leads` al cliente por seguridad)."""
+    if db is None:
+        return jsonify([]), 200
+    if not TRACK_SECRET or request.headers.get("X-Track-Secret") != TRACK_SECRET:
+        return jsonify([]), 403
+    out = []
+    try:
+        # 1 solo filtro (sin índice compuesto); el estado se filtra en memoria.
+        for d in db.collection("leads").where("tipo", "==", "financiacion").stream():
+            v = d.to_dict() or {}
+            if str(v.get("estado", "nuevo")) != "nuevo":
+                continue
+            ca = v.get("createdAt")
+            out.append({
+                "id": d.id,
+                "nombre": v.get("nombre", ""),
+                "telefono": v.get("contacto", ""),
+                "opcion": (v.get("extra") or {}).get("entidad", ""),
+                "producto": v.get("producto", ""),
+                "ts": ca.timestamp() if hasattr(ca, "timestamp") else 0,
+            })
+        out.sort(key=lambda x: x.get("ts", 0), reverse=True)
+    except Exception as e:
+        print("list_financing_leads err:", e)
+    return jsonify(out), 200
+
+
+@app.route("/api/leads/handled", methods=["POST"])
+def mark_lead_handled():
+    """Marca una solicitud como contactada (sale de la lista/badge de la app)."""
+    if db is None:
+        return jsonify({"ok": False}), 200
+    if not TRACK_SECRET or request.headers.get("X-Track-Secret") != TRACK_SECRET:
+        return jsonify({"ok": False}), 403
+    lid = str((request.get_json(silent=True) or {}).get("id") or "").strip()
+    if lid:
+        try:
+            db.collection("leads").document(lid).update({"estado": "contactado"})
+        except Exception as e:
+            print("mark_lead_handled err:", e)
+    return jsonify({"ok": True}), 200
+
+
 @app.route("/meta-feed.csv")
 def meta_feed_csv():
     """Feed de productos para el catalogo de Meta (origen de datos por URL).
