@@ -172,8 +172,8 @@ export default function Checkout() {
                     <input type="text" value={form.nombre} onChange={set("nombre")} autoComplete="name" />
                   </label>
                   <label className={fieldClass("contacto")}>
-                    <span>Teléfono o email *</span>
-                    <input type="text" value={form.contacto} onChange={set("contacto")} placeholder="099 123 456 o tu@email.com" />
+                    <span>Teléfono (WhatsApp) *</span>
+                    <input type="tel" inputMode="tel" value={form.contacto} onChange={set("contacto")} placeholder="099 123 456" autoComplete="tel" />
                   </label>
                 </div>
               </section>

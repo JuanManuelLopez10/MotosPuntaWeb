@@ -84,8 +84,8 @@ export default function Contacto() {
                   <input type="text" value={form.nombre} onChange={set("nombre")} autoComplete="name" required />
                 </label>
                 <label className="ct__field">
-                  <span>Teléfono o email *</span>
-                  <input type="text" value={form.contacto} onChange={set("contacto")} placeholder="099 123 456 o tu@email.com" required />
+                  <span>Teléfono (WhatsApp) *</span>
+                  <input type="tel" inputMode="tel" value={form.contacto} onChange={set("contacto")} placeholder="099 123 456" autoComplete="tel" required />
                 </label>
                 <label className="ct__field">
                   <span>Mensaje</span>
