@@ -32,9 +32,11 @@
    en opacidad al pasar el cursor por un círculo de color. */
 .pcard__media .pcard__img {
   position: absolute;
-  inset: var(--sp-4);
-  width: auto;
-  height: auto;
+  top: var(--sp-4);
+  left: var(--sp-4);
+  width: calc(100% - 2 * var(--sp-4));
+  height: calc(100% - 2 * var(--sp-4));
+  object-fit: contain;
   transition: opacity 0.4s var(--ease), transform var(--dur) var(--ease);
 }
 .pcard__media .pcard__img--hover { opacity: 0; }
