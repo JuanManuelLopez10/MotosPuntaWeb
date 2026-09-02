@@ -753,6 +753,58 @@ def mark_lead_handled():
     return jsonify({"ok": True}), 200
 
 
+@app.route("/api/orders/pendientes", methods=["GET"])
+def list_orders_pending():
+    """Compras/pedidos NO archivados para la app (pestaña Compras). Datos de clientes →
+    protegido por TRACK_SECRET."""
+    if db is None:
+        return jsonify([]), 200
+    if not TRACK_SECRET or request.headers.get("X-Track-Secret") != TRACK_SECRET:
+        return jsonify([]), 403
+    out = []
+    try:
+        docs = db.collection("orders").order_by("createdAt", direction=firestore.Query.DESCENDING).limit(50).stream()
+        for d in docs:
+            v = d.to_dict() or {}
+            if v.get("archivado"):
+                continue
+            items = v.get("items") or []
+            resumen = ", ".join(f"{i.get('qty', 1)}× {i.get('title', '')}" for i in items)
+            cli = v.get("cliente") or {}
+            ca = v.get("createdAt")
+            out.append({
+                "id": d.id,
+                "nombre": cli.get("nombre", ""),
+                "contacto": cli.get("contacto", ""),
+                "resumen": resumen,
+                "total": v.get("totalUsd", 0),
+                "metodo": v.get("metodo", ""),
+                "estado": v.get("estado", ""),
+                "entrega": v.get("entrega", ""),
+                "direccion": cli.get("direccion", ""),
+                "ts": ca.timestamp() if hasattr(ca, "timestamp") else 0,
+            })
+    except Exception as e:
+        print("list_orders_pending err:", e)
+    return jsonify(out), 200
+
+
+@app.route("/api/orders/archived", methods=["POST"])
+def archive_order():
+    """Archiva un pedido (sale de la lista/badge de la app). No toca el estado del pago."""
+    if db is None:
+        return jsonify({"ok": False}), 200
+    if not TRACK_SECRET or request.headers.get("X-Track-Secret") != TRACK_SECRET:
+        return jsonify({"ok": False}), 403
+    oid = str((request.get_json(silent=True) or {}).get("id") or "").strip()
+    if oid:
+        try:
+            db.collection("orders").document(oid).update({"archivado": True})
+        except Exception as e:
+            print("archive_order err:", e)
+    return jsonify({"ok": True}), 200
+
+
 @app.route("/meta-feed.csv")
 def meta_feed_csv():
     """Feed de productos para el catalogo de Meta (origen de datos por URL).
