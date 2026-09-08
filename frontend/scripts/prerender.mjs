@@ -272,6 +272,29 @@ function mBodyHtml(m) {
     `</div>`;
 }
 
+// Lista de enlaces internos a las fichas (para páginas hub: catálogo por categoría y motos).
+// Enlaza al MODELO (/producto/{slug}) — las mismas URLs del sitemap y con cuerpo pre-renderizado.
+// Así Google descubre y reparte autoridad a todo el catálogo siguiendo enlaces internos, no solo
+// por el sitemap.
+function modelLinksHtml(list, heading) {
+  const items = (list || [])
+    .filter((m) => m.slug && safeSeg(String(m.slug)) && mPriceValue(m) != null)
+    .sort((a, b) => String(a.title || "").localeCompare(String(b.title || ""), "es"))
+    .map((m) => {
+      const pv = mPriceValue(m);
+      const price = pv != null ? ` — USD ${pv.toLocaleString("es-UY")}` : "";
+      return `<li><a href="/producto/${esc(m.slug)}">${esc(m.title || m.slug)}${price}</a></li>`;
+    })
+    .join("");
+  return items ? `<h2>${esc(heading)}</h2><ul class="mp-list">${items}</ul>` : "";
+}
+// Cuerpo de una página hub: título + descripción + lista de fichas enlazadas + nav + contacto.
+function hubBodyHtml(meta, list, heading) {
+  return `<div class="mp-mkt"><h1>${esc(meta.title || SITE_NAME)}</h1>` +
+    `<p>${esc(meta.description || "")}</p>` +
+    modelLinksHtml(list, heading) + NAV_HTML + CONTACT_HTML + `</div>`;
+}
+
 const SEO_RE = /<!--seo:start-->[\s\S]*?<!--seo:end-->/;
 const BODY_RE = /<!--seobody:start-->[\s\S]*?<!--seobody:end-->/;
 
@@ -371,6 +394,35 @@ async function main() {
       });
       count++;
       productUrls.push(`${SITE_URL}/producto/${m.slug}`);
+    }
+  }
+
+  // --- Enriquecer las páginas HUB (catálogo por categoría + motos) con enlaces internos a
+  //     cada ficha, para que Google descubra y rankee todo el catálogo. Sobrescribe el cuerpo
+  //     genérico que se escribió antes; el <head> (título/descripción/canonical) se mantiene. ---
+  if (Array.isArray(models) && models.length) {
+    const catMeta = Object.fromEntries(MARKETING.map((x) => [x.path, x]));
+    const nonMoto = models.filter((m) => !mIsMoto(m));
+    const motos = models.filter(mIsMoto);
+
+    if (catMeta["/catalogo"]) {
+      const meta = catMeta["/catalogo"];
+      await write("/catalogo", { ...meta, body: hubBodyHtml(meta, nonMoto, "Cascos, indumentaria y accesorios") });
+    }
+    for (const [cat, label] of [["cascos", "Cascos"], ["indumentaria", "Indumentaria"], ["accesorios", "Accesorios"]]) {
+      const meta = catMeta[`/catalogo/${cat}`];
+      if (!meta) continue;
+      const list = nonMoto.filter((m) => String(m.productType || "").toLowerCase() === cat);
+      await write(`/catalogo/${cat}`, { ...meta, body: hubBodyHtml(meta, list, `${label} para moto`) });
+    }
+    if (catMeta["/motos"]) {
+      const meta = catMeta["/motos"];
+      await write("/motos", { ...meta, body: hubBodyHtml(meta, motos, "Modelos de motos 0km") });
+    }
+    for (const slug of new Set(motos.map((m) => typeSlug(m.type)).filter(Boolean))) {
+      const [label, blurb] = MOTO_TYPE_META[slug] || [slug, ""];
+      const meta = { path: `/motos/${slug}`, title: `Motos ${label}`, description: `Motos ${label} 0km en Motos Punta, Maldonado. ${blurb}` };
+      await write(`/motos/${slug}`, { ...meta, body: hubBodyHtml(meta, motos.filter((m) => typeSlug(m.type) === slug), `Motos ${label} 0km`) });
     }
   }
 
