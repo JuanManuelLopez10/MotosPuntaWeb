@@ -13,6 +13,24 @@
     <meta name="theme-color" content="#0A0A0B" />
     <meta name="author" content="Motos Punta" />
 
+    <!-- Estilo del contenido pre-renderizado del cuerpo (SEO). React reemplaza este contenido
+         al montar, así que estos estilos sólo aplican al HTML crudo que ven los buscadores y
+         durante el primer instante de carga. Clases con prefijo mp- para no chocar con la app. -->
+    <style>
+      html, body { background: #0A0A0B; }
+      #root > .mp-seo, #root > .mp-mkt {
+        max-width: 760px; margin: 0 auto; padding: 28px 20px 64px;
+        color: #e7e7ea; font-family: "Hanken Grotesk", system-ui, sans-serif; line-height: 1.6;
+      }
+      #root > .mp-seo h1, #root > .mp-mkt h1 { font-family: "Oswald", sans-serif; font-size: 1.9rem; margin: .3em 0 .2em; color: #fff; }
+      #root > .mp-seo h2 { font-family: "Oswald", sans-serif; font-size: 1.2rem; margin: 1.3em 0 .4em; color: #fff; }
+      #root > .mp-seo img { width: 100%; max-width: 520px; height: auto; display: block; margin: 0 auto 18px; border-radius: 14px; }
+      #root > .mp-seo a, #root > .mp-mkt a { color: #ff3b3b; }
+      #root > .mp-seo ul, #root > .mp-mkt ul { padding-left: 1.2em; }
+      #root > .mp-seo .mp-price { font-size: 1.35rem; font-weight: 700; color: #fff; margin: .2em 0; }
+      #root > .mp-seo .mp-bc, #root > .mp-seo .mp-kind, #root > .mp-seo .mp-stock { opacity: .7; font-size: .92rem; }
+    </style>
+
     <!-- SEO por página: el script de prerender (scripts/prerender.mjs) reemplaza TODO lo que
          hay entre estos markers por el <head> específico de cada ruta en el build. NO quitar
          los markers. El default de acá es la Home / el sitio. -->
@@ -74,7 +92,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="root"></div>
+    <!-- El contenido entre los markers <!--seobody:start-->/<!--seobody:end--> lo reemplaza el
+         prerender (scripts/prerender.mjs) por el cuerpo específico de cada ruta, para que los
+         buscadores vean contenido real sin ejecutar JS. React lo descarta al montar en #root. -->
+    <div id="root"><!--seobody:start-->
+      <div class="mp-mkt">
+        <h1>Motos Punta — Concesionaria de motos en Maldonado</h1>
+        <p>Motos 0km, cascos, indumentaria y accesorios en Maldonado, Uruguay. Financiación clara y atención directa por WhatsApp.</p>
+        <nav><a href="/motos">Motos 0km</a> · <a href="/catalogo/cascos">Cascos</a> · <a href="/catalogo/indumentaria">Indumentaria</a> · <a href="/catalogo/accesorios">Accesorios</a> · <a href="/financiacion">Financiación</a> · <a href="/contacto">Contacto</a></nav>
+        <p>Arturo Santana esq. 19 de Abril, Maldonado. WhatsApp 099 673 830.</p>
+      </div>
+      <!--seobody:end--></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

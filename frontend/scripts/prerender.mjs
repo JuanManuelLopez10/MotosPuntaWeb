@@ -190,7 +190,90 @@ function mJsonLd(m) {
   return j;
 }
 
+// ---- Cuerpo pre-renderizado (contenido real crawleable, sin ejecutar JS) ----
+// Etiquetas legibles para las claves de `specs`. Lo que no esté acá se humaniza solo.
+const SPEC_LABELS = {
+  cilindrada: "Cilindrada (cc)", caballaje: "Potencia (HP)", torque: "Torque (Nm)",
+  cilindros: "Cilindros", cantidadCambios: "Cambios", capacidadTanque: "Tanque (L)",
+  frenos: "Frenos", refrigeracion: "Refrigeración", iluminacion: "Iluminación", tablero: "Tablero",
+  rodadoDelantero: "Rodado delantero", rodadoTrasero: "Rodado trasero", garantia: "Garantía",
+  horquillaInvertida: "Horquilla invertida", monoshockTrasero: "Monoshock trasero",
+  peso: "Peso (kg)", material: "Material", cierre: "Cierre", colorVisor: "Color visor",
+  visorSolarInterno: "Visor solar interno", estrellasSharp: "Estrellas SHARP",
+  ece2206: "Homologación ECE 22.06", ece2205: "Homologación ECE 22.05", dot: "Homologación DOT",
+};
+const humanizeKey = (k) =>
+  SPEC_LABELS[k] || String(k).replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
+function specsListHtml(specs) {
+  const entries = Object.entries(specs || {}).filter(([, v]) => v !== "" && v != null && v !== false);
+  if (!entries.length) return "";
+  const items = entries
+    .map(([k, v]) => `<li><strong>${esc(humanizeKey(k))}:</strong> ${esc(v === true ? "Sí" : v)}</li>`)
+    .join("");
+  return `<h2>Ficha técnica</h2><ul>${items}</ul>`;
+}
+const NAV_HTML =
+  `<nav><a href="/motos">Motos 0km</a> · <a href="/catalogo/cascos">Cascos</a> · ` +
+  `<a href="/catalogo/indumentaria">Indumentaria</a> · <a href="/catalogo/accesorios">Accesorios</a> · ` +
+  `<a href="/financiacion">Financiación</a> · <a href="/contacto">Contacto</a></nav>`;
+const CONTACT_HTML =
+  `<p>Motos Punta — Arturo Santana esq. 19 de Abril, Maldonado, Uruguay. ` +
+  `WhatsApp <a href="https://wa.me/59899673830">099 673 830</a>.</p>`;
+
+// Cuerpo genérico para páginas de marketing / catálogo / productos flat.
+function defaultBodyHtml(meta) {
+  const img =
+    meta.image && meta.type === "product"
+      ? `<img src="${esc(meta.image)}" alt="${esc(meta.title || "")} — Motos Punta, Maldonado" width="520" height="520" />`
+      : "";
+  const cls = meta.type === "product" ? "mp-seo" : "mp-mkt";
+  return `<div class="${cls}">${img}<h1>${esc(meta.title || SITE_NAME)}</h1>` +
+    `<p>${esc(meta.description || "")}</p>${NAV_HTML}${CONTACT_HTML}</div>`;
+}
+
+// Cuerpo rico para páginas de MODELO (ficha técnica, precio, versiones).
+function mBodyHtml(m) {
+  const title = m.title || "";
+  const km = mIsMoto(m) ? " 0km" : "";
+  const brand = m.brand && !title.includes(m.brand) ? m.brand : "";
+  const cat = mIsMoto(m) ? { href: "/motos", label: "Motos" } : { href: "/catalogo", label: "Catálogo" };
+  const kind = mIsMoto(m)
+    ? `Moto 0km${m.type ? ` · ${esc(m.type)}` : ""}`
+    : esc(m.productType || "");
+  const pv = mPriceValue(m);
+  const priceHtml = pv != null
+    ? `<p class="mp-price">Precio: USD ${pv.toLocaleString("es-UY")}</p>`
+    : `<p class="mp-price">Consultá el precio por WhatsApp</p>`;
+  const stock = mInStock(m) ? "Disponible / en stock" : "Consultá disponibilidad";
+  const desc = (m.seo && m.seo.description) || mSeoDescription(m);
+  const colors = [
+    ...new Set(
+      mVariants(m)
+        .map((v) => [v.colorName || v.color, v.acabado].filter(Boolean).join(" ").trim())
+        .filter(Boolean)
+    ),
+  ];
+  const colorsHtml = colors.length > 1
+    ? `<h2>Versiones y colores</h2><ul>${colors.map((c) => `<li>${esc(c)}</li>`).join("")}</ul>`
+    : "";
+  return `<div class="mp-seo">` +
+    `<nav class="mp-bc"><a href="/">Inicio</a> › <a href="${cat.href}">${cat.label}</a> › <span>${esc(title)}</span></nav>` +
+    `<img src="${esc(mImage(m))}" alt="${esc(title)}${km}${brand ? ` ${esc(brand)}` : ""} — Motos Punta, Maldonado" width="520" height="520" />` +
+    `<h1>${esc(title)}${km}${brand ? ` — ${esc(brand)}` : ""}</h1>` +
+    `<p class="mp-kind">${kind} · Motos Punta, Maldonado, Uruguay</p>` +
+    priceHtml +
+    `<p class="mp-stock">${stock}</p>` +
+    `<p class="mp-desc">${esc(desc)}</p>` +
+    specsListHtml(m.specs) +
+    colorsHtml +
+    `<p>Consultá stock, precio y financiación por WhatsApp: <a href="https://wa.me/59899673830">099 673 830</a>.</p>` +
+    CONTACT_HTML +
+    `<p><a href="${cat.href}">Ver más en ${cat.label.toLowerCase()}</a></p>` +
+    `</div>`;
+}
+
 const SEO_RE = /<!--seo:start-->[\s\S]*?<!--seo:end-->/;
+const BODY_RE = /<!--seobody:start-->[\s\S]*?<!--seobody:end-->/;
 
 async function main() {
   const template = await readFile(join(DIST, "index.html"), "utf8");
@@ -199,11 +282,16 @@ async function main() {
     return;
   }
 
+  const hasBodyMarkers = BODY_RE.test(template);
   const write = async (path, meta) => {
     const rel = path === "/" ? "index.html" : `${path.replace(/^\/|\/$/g, "")}/index.html`;
     const out = join(DIST, rel);
     await mkdir(dirname(out), { recursive: true });
-    const html = template.replace(SEO_RE, `<!--seo:start-->\n    ${seoBlock(meta)}\n    <!--seo:end-->`);
+    let html = template.replace(SEO_RE, `<!--seo:start-->\n    ${seoBlock(meta)}\n    <!--seo:end-->`);
+    if (hasBodyMarkers) {
+      const body = meta.body || defaultBodyHtml(meta);
+      html = html.replace(BODY_RE, `<!--seobody:start-->${body}<!--seobody:end-->`);
+    }
     await writeFile(out, html, "utf8");
   };
 
@@ -279,6 +367,7 @@ async function main() {
         image: mImage(m),
         type: "product",
         jsonLd: mJsonLd(m),
+        body: mBodyHtml(m),
       });
       count++;
       productUrls.push(`${SITE_URL}/producto/${m.slug}`);
