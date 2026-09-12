@@ -92,9 +92,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <!-- El contenido entre los markers <!--seobody:start-->/<!--seobody:end--> lo reemplaza el
-         prerender (scripts/prerender.mjs) por el cuerpo específico de cada ruta, para que los
-         buscadores vean contenido real sin ejecutar JS. React lo descarta al montar en #root. -->
+    <!-- El contenido dentro de #root (entre los marcadores seobody) lo reemplaza el prerender
+         (scripts/prerender.mjs) por el cuerpo especifico de cada ruta, para que los buscadores
+         vean contenido real sin ejecutar JS. React lo descarta al montar en #root. -->
     <div id="root"><!--seobody:start-->
       <div class="mp-mkt">
         <h1>Motos Punta — Concesionaria de motos en Maldonado</h1>
