@@ -4,6 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!-- Google Analytics 4 (etiqueta de Google). Va en index.html, así el prerender la copia a
+         todas las páginas. Los cambios de página de la SPA los mide GA solo (medición mejorada:
+         "cambios de página basados en el historial del navegador"). Una sola etiqueta por página. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-YJG509T6VD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-YJG509T6VD');
+    </script>
+
     <!-- Favicons (logo de Motos Punta) -->
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
