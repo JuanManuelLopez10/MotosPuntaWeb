@@ -366,6 +366,7 @@ def get_producto_model(slug):
 RELEVANCE_HALFLIFE_DAYS = 30
 VISIT_WEIGHT = 1.0
 SALE_WEIGHT = 5.0
+MILESTONE_STEP = 20   # avisa "Producto en alza" cada 20 de interés (visitas + ventas)
 TRACK_SECRET = os.getenv("TRACK_SECRET", "")   # protege /api/track/sale (lo manda la app)
 VISIT_COOLDOWN = 600                            # misma IP+producto no cuenta 2 veces en 10 min
 
@@ -407,7 +408,7 @@ def _key_label(key):
 
 def _bump_relevance(key, weight):
     """Suma `weight` al score decayado de `key` y +1 al contador acumulado `n` (visitas+ventas).
-    Devuelve el múltiplo de 5 recién cruzado (para notificar) o None. Transacción sobre el doc
+    Devuelve el múltiplo de MILESTONE_STEP recién cruzado (para notificar) o None. Transacción sobre el doc
     único; el merge no pisa las otras claves."""
     now = int(time.time())
     ref = db.collection("meta").document("relevancia")
@@ -422,8 +423,8 @@ def _bump_relevance(key, weight):
         n = int((cur or {}).get("n", 0))
         s = s * _decay_factor(now - t) + float(weight)
         new_n = n + 1
-        if new_n >= 5 and (n // 5) != (new_n // 5):
-            result["crossed"] = (new_n // 5) * 5
+        if new_n >= MILESTONE_STEP and (n // MILESTONE_STEP) != (new_n // MILESTONE_STEP):
+            result["crossed"] = (new_n // MILESTONE_STEP) * MILESTONE_STEP
         txn.set(ref, {"scores": {key: {"s": s, "t": now, "n": new_n}}}, merge=True)
 
     _txn(db.transaction())
